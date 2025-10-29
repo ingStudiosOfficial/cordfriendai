@@ -1,86 +1,177 @@
-/* color palette from <https://github.com/vuejs/theme> */
+@import url('https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;700');
+
 :root {
-  --vt-c-white: #ffffff;
-  --vt-c-white-soft: #f8f8f8;
-  --vt-c-white-mute: #f2f2f2;
+	--md-ref-typeface-brand: 'Google Sans';
+    --md-ref-typeface-plain: 'Google Sans';
+	--md-sys-color-primary: rgb(85 90 146);
+	--md-sys-color-surface-tint: rgb(85 90 146);
+	--md-sys-color-on-primary: rgb(255 255 255);
+	--md-sys-color-primary-container: rgb(224 224 255);
+	--md-sys-color-on-primary-container: rgb(61 66 121);
+	--md-sys-color-secondary: rgb(79 91 146);
+	--md-sys-color-on-secondary: rgb(255 255 255);
+	--md-sys-color-secondary-container: rgb(221 225 255);
+	--md-sys-color-on-secondary-container: rgb(55 67 121);
+	--md-sys-color-tertiary: rgb(120 83 107);
+	--md-sys-color-on-tertiary: rgb(255 255 255);
+	--md-sys-color-tertiary-container: rgb(255 215 238);
+	--md-sys-color-on-tertiary-container: rgb(94 60 83);
+	--md-sys-color-error: rgb(186 26 26);
+	--md-sys-color-on-error: rgb(255 255 255);
+	--md-sys-color-error-container: rgb(255 218 214);
+	--md-sys-color-on-error-container: rgb(147 0 10);
+	--md-sys-color-background: rgb(251 248 255);
+	--md-sys-color-on-background: rgb(27 27 33);
+	--md-sys-color-surface: rgb(251 248 255);
+	--md-sys-color-on-surface: rgb(27 27 33);
+	--md-sys-color-surface-variant: rgb(227 225 236);
+	--md-sys-color-on-surface-variant: rgb(70 70 79);
+	--md-sys-color-outline: rgb(119 118 128);
+	--md-sys-color-outline-variant: rgb(199 197 208);
+	--md-sys-color-shadow: rgb(0 0 0);
+	--md-sys-color-scrim: rgb(0 0 0);
+	--md-sys-color-inverse-surface: rgb(48 48 54);
+	--md-sys-color-inverse-on-surface: rgb(242 239 247);
+	--md-sys-color-inverse-primary: rgb(190 194 255);
+	--md-sys-color-primary-fixed: rgb(224 224 255);
+	--md-sys-color-on-primary-fixed: rgb(15 20 75);
+	--md-sys-color-primary-fixed-dim: rgb(190 194 255);
+	--md-sys-color-on-primary-fixed-variant: rgb(61 66 121);
+	--md-sys-color-secondary-fixed: rgb(221 225 255);
+	--md-sys-color-on-secondary-fixed: rgb(7 22 75);
+	--md-sys-color-secondary-fixed-dim: rgb(184 195 255);
+	--md-sys-color-on-secondary-fixed-variant: rgb(55 67 121);
+	--md-sys-color-tertiary-fixed: rgb(255 215 238);
+	--md-sys-color-on-tertiary-fixed: rgb(46 17 38);
+	--md-sys-color-tertiary-fixed-dim: rgb(231 185 213);
+	--md-sys-color-on-tertiary-fixed-variant: rgb(94 60 83);
+	--md-sys-color-surface-dim: rgb(219 217 224);
+	--md-sys-color-surface-bright: rgb(251 248 255);
+	--md-sys-color-surface-container-lowest: rgb(255 255 255);
+	--md-sys-color-surface-container-low: rgb(245 242 250);
+	--md-sys-color-surface-container: rgb(239 237 244);
+	--md-sys-color-surface-container-high: rgb(234 231 239);
+	--md-sys-color-surface-container-highest: rgb(228 225 233);
+	
+	--md-spring-expressive-spatial-fast: cubic-bezier(0.42, 1.67, 0.21, 0.90);
+	
+	/* Expressive Spatial - For moving elements across screen */
+	--md-spring-expressive-spatial-fast-duration: 350ms;
+	
+	--md-spring-expressive-spatial-default: cubic-bezier(0.38, 1.21, 0.22, 1.00);
+	--md-spring-expressive-spatial-default-duration: 500ms;
+	
+	--md-spring-expressive-spatial-slow: cubic-bezier(0.39, 1.29, 0.35, 0.98);
+	--md-spring-expressive-spatial-slow-duration: 650ms;
+	
+	/* Expressive Effects - For visual property changes (opacity, scale, etc) */
+	--md-spring-expressive-effects-fast: cubic-bezier(0.31, 0.94, 0.34, 1.00);
+	--md-spring-expressive-effects-fast-duration: 150ms;
+	
+	--md-spring-expressive-effects-default: cubic-bezier(0.34, 0.80, 0.34, 1.00);
+	--md-spring-expressive-effects-default-duration: 200ms;
+	
+	--md-spring-expressive-effects-slow: cubic-bezier(0.34, 0.88, 0.34, 1.00);
+	--md-spring-expressive-effects-slow-duration: 300ms;
 
-  --vt-c-black: #181818;
-  --vt-c-black-soft: #222222;
-  --vt-c-black-mute: #282828;
-
-  --vt-c-indigo: #2c3e50;
-
-  --vt-c-divider-light-1: rgba(60, 60, 60, 0.29);
-  --vt-c-divider-light-2: rgba(60, 60, 60, 0.12);
-  --vt-c-divider-dark-1: rgba(84, 84, 84, 0.65);
-  --vt-c-divider-dark-2: rgba(84, 84, 84, 0.48);
-
-  --vt-c-text-light-1: var(--vt-c-indigo);
-  --vt-c-text-light-2: rgba(60, 60, 60, 0.66);
-  --vt-c-text-dark-1: var(--vt-c-white);
-  --vt-c-text-dark-2: rgba(235, 235, 235, 0.64);
-}
-
-/* semantic color variables for this project */
-:root {
-  --color-background: var(--vt-c-white);
-  --color-background-soft: var(--vt-c-white-soft);
-  --color-background-mute: var(--vt-c-white-mute);
-
-  --color-border: var(--vt-c-divider-light-2);
-  --color-border-hover: var(--vt-c-divider-light-1);
-
-  --color-heading: var(--vt-c-text-light-1);
-  --color-text: var(--vt-c-text-light-1);
-
-  --section-gap: 160px;
+	/* Standard Effects - For visual property changes (opacity, scale, etc) */
+	--md-spring-standard-effects-fast: cubic-bezier(0.31, 0.94, 0.34, 1.00);
+	--md-spring-standard-effects-fast-duration: 150ms;
+	
+	--md-spring-standard-effects-default: cubic-bezier(0.34, 0.80, 0.34, 1.00);
+	--md-spring-standard-effects-default-duration: 200ms;
+	
+	--md-spring-standard-effects-slow: cubic-bezier(0.34, 0.88, 0.34, 1.00);
+	--md-spring-standard-effects-slow-duration: 300ms;
+	
+	--discord-blurple: #5865F2;
+	--discord-light-blurple: #E0E3FF;
 }
 
 @media (prefers-color-scheme: dark) {
-  :root {
-    --color-background: var(--vt-c-black);
-    --color-background-soft: var(--vt-c-black-soft);
-    --color-background-mute: var(--vt-c-black-mute);
+	:root {
+		--md-ref-typeface-brand: 'Google Sans';
+    	--md-ref-typeface-plain: 'Google Sans';
+		--md-sys-color-primary: rgb(190 194 255);
+		--md-sys-color-surface-tint: rgb(190 194 255);
+		--md-sys-color-on-primary: rgb(38 43 97);
+		--md-sys-color-primary-container: rgb(61 66 121);
+		--md-sys-color-on-primary-container: rgb(224 224 255);
+		--md-sys-color-secondary: rgb(184 195 255);
+		--md-sys-color-on-secondary: rgb(32 44 97);
+		--md-sys-color-secondary-container: rgb(55 67 121);
+		--md-sys-color-on-secondary-container: rgb(221 225 255);
+		--md-sys-color-tertiary: rgb(231 185 213);
+		--md-sys-color-on-tertiary: rgb(69 38 60);
+		--md-sys-color-tertiary-container: rgb(94 60 83);
+		--md-sys-color-on-tertiary-container: rgb(255 215 238);
+		--md-sys-color-error: rgb(255 180 171);
+		--md-sys-color-on-error: rgb(105 0 5);
+		--md-sys-color-error-container: rgb(147 0 10);
+		--md-sys-color-on-error-container: rgb(255 218 214);
+		--md-sys-color-background: rgb(19 19 24);
+		--md-sys-color-on-background: rgb(228 225 233);
+		--md-sys-color-surface: rgb(19 19 24);
+		--md-sys-color-on-surface: rgb(228 225 233);
+		--md-sys-color-surface-variant: rgb(70 70 79);
+		--md-sys-color-on-surface-variant: rgb(199 197 208);
+		--md-sys-color-outline: rgb(145 144 154);
+		--md-sys-color-outline-variant: rgb(70 70 79);
+		--md-sys-color-shadow: rgb(0 0 0);
+		--md-sys-color-scrim: rgb(0 0 0);
+		--md-sys-color-inverse-surface: rgb(228 225 233);
+		--md-sys-color-inverse-on-surface: rgb(48 48 54);
+		--md-sys-color-inverse-primary: rgb(85 90 146);
+		--md-sys-color-primary-fixed: rgb(224 224 255);
+		--md-sys-color-on-primary-fixed: rgb(15 20 75);
+		--md-sys-color-primary-fixed-dim: rgb(190 194 255);
+		--md-sys-color-on-primary-fixed-variant: rgb(61 66 121);
+		--md-sys-color-secondary-fixed: rgb(221 225 255);
+		--md-sys-color-on-secondary-fixed: rgb(7 22 75);
+		--md-sys-color-secondary-fixed-dim: rgb(184 195 255);
+		--md-sys-color-on-secondary-fixed-variant: rgb(55 67 121);
+		--md-sys-color-tertiary-fixed: rgb(255 215 238);
+		--md-sys-color-on-tertiary-fixed: rgb(46 17 38);
+		--md-sys-color-tertiary-fixed-dim: rgb(231 185 213);
+		--md-sys-color-on-tertiary-fixed-variant: rgb(94 60 83);
+		--md-sys-color-surface-dim: rgb(19 19 24);
+		--md-sys-color-surface-bright: rgb(57 57 63);
+		--md-sys-color-surface-container-lowest: rgb(14 14 19);
+		--md-sys-color-surface-container-low: rgb(27 27 33);
+		--md-sys-color-surface-container: rgb(31 31 37);
+		--md-sys-color-surface-container-high: rgb(42 41 47);
+		--md-sys-color-surface-container-highest: rgb(52 52 58);
+		
+		/* Expressive Spatial - For moving elements across screen */
+		--md-spring-expressive-spatial-fast-duration: 350ms;
+		
+		--md-spring-expressive-spatial-default: cubic-bezier(0.38, 1.21, 0.22, 1.00);
+		--md-spring-expressive-spatial-default-duration: 500ms;
+		
+		--md-spring-expressive-spatial-slow: cubic-bezier(0.39, 1.29, 0.35, 0.98);
+		--md-spring-expressive-spatial-slow-duration: 650ms;
+		
+		/* Expressive Effects - For visual property changes (opacity, scale, etc) */
+		--md-spring-expressive-effects-fast: cubic-bezier(0.31, 0.94, 0.34, 1.00);
+		--md-spring-expressive-effects-fast-duration: 150ms;
+		
+		--md-spring-expressive-effects-default: cubic-bezier(0.34, 0.80, 0.34, 1.00);
+		--md-spring-expressive-effects-default-duration: 200ms;
+		
+		--md-spring-expressive-effects-slow: cubic-bezier(0.34, 0.88, 0.34, 1.00);
+		--md-spring-expressive-effects-slow-duration: 300ms;
 
-    --color-border: var(--vt-c-divider-dark-2);
-    --color-border-hover: var(--vt-c-divider-dark-1);
+		/* Standard Effects - For visual property changes (opacity, scale, etc) */
+		--md-spring-standard-effects-fast: cubic-bezier(0.31, 0.94, 0.34, 1.00);
+		--md-spring-standard-effects-fast-duration: 150ms;
+		
+		--md-spring-standard-effects-default: cubic-bezier(0.34, 0.80, 0.34, 1.00);
+		--md-spring-standard-effects-default-duration: 200ms;
+		
+		--md-spring-standard-effects-slow: cubic-bezier(0.34, 0.88, 0.34, 1.00);
+		--md-spring-standard-effects-slow-duration: 300ms;
 
-    --color-heading: var(--vt-c-text-dark-1);
-    --color-text: var(--vt-c-text-dark-2);
-  }
-}
-
-*,
-*::before,
-*::after {
-  box-sizing: border-box;
-  margin: 0;
-  font-weight: normal;
-}
-
-body {
-  min-height: 100vh;
-  color: var(--color-text);
-  background: var(--color-background);
-  transition:
-    color 0.5s,
-    background-color 0.5s;
-  line-height: 1.6;
-  font-family:
-    Inter,
-    -apple-system,
-    BlinkMacSystemFont,
-    'Segoe UI',
-    Roboto,
-    Oxygen,
-    Ubuntu,
-    Cantarell,
-    'Fira Sans',
-    'Droid Sans',
-    'Helvetica Neue',
-    sans-serif;
-  font-size: 15px;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+		--discord-blurple: #5865F2;
+		--discord-light-blurple: #E0E3FF;
+	}
 }

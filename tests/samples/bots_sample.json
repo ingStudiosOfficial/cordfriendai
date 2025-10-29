@@ -1,0 +1,16 @@
+[
+    {
+        "_id": "68f48d65b2e2b94f7f434a78 ",
+        "name": "Bot 1",
+        "server_id": "795393018764591134",
+        "user_id": "1128648335096549487",
+        "google_ai_api": "AIzaSyDMAa4PQbrQk-vePvSzMCMCxv5HGvbLeew"
+    },
+    {
+        "_id": "68f48d6fb200a94049792fc2",
+        "name": "Bot 2",
+        "server_id": "795393018764591134",
+        "user_id": "1265716445560700978",
+        "google_ai_api": "AIzaSyDMAa4PQbrQk-vePvSzMCMCxv5HGvbLeew"
+    }
+]
