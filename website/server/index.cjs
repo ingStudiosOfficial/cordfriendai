@@ -336,7 +336,7 @@ connectToMongodb().then(() => {
 			// Password change logic
 			if (userData.new_password) {
 				// Validate password
-				const passwordValidation = validateUser(userData.old_password, originalUserData.password);
+				const passwordValidation = await validateUser(userData.old_password, originalUserData.password);
 
 				if (passwordValidation === false) {
 					return sendErrorResponse(res, 401, 'The password you entered is incorrect.');
@@ -648,7 +648,25 @@ connectToMongodb().then(() => {
 			return sendErrorResponse(res, 400, 'Invalid old image ID format.');
 		}
 
+		const botId = botData._id;
+
+		if (botId && ObjectId.isValid(botId)) {
+			const objectId = new ObjectId(botId);
+			
+			const duplicateBot = await botsCollection.findOne({
+				'server_id': botData.server_id,
+				'_id': { $ne: objectId } 
+			});
+
+			if (duplicateBot) {
+				return sendErrorResponse(res, 409, 'Bot already exists in server.');
+			}
+		}
+
 		try {
+			// Delete the _id from being set
+			delete botData._id;
+
 			const result = await botsCollection.updateOne(
 				{ _id: new ObjectId(req.params.id) },
 				{ $set: botData }
@@ -660,7 +678,9 @@ connectToMongodb().then(() => {
 			}
 			
 			// Delete previous image from GridFS
-			await botImagesBucket.delete(new ObjectId(req.body.old_image_id));
+			if (req.body.image_id !== req.body.old_image_id) {
+				await botImagesBucket.delete(new ObjectId(req.body.old_image_id));
+			}
 
 			console.log(`Updated bot with ID ${req.params.id} successfully.`);
 			res.status(200).json({

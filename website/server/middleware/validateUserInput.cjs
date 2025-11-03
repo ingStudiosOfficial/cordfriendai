@@ -20,7 +20,7 @@ function validateUserInput(req, res, next) {
         
         return res.status(400).json({
             status: 'error',
-            message: 'One or more required fields are missing or invalid.',
+            message: 'One or more required fields are missing or invalid. Hint: If you change a password, please fill in the new and old password fields.',
             errors: validationErrors
         });
     }

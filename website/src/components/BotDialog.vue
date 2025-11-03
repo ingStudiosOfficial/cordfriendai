@@ -22,6 +22,7 @@
     const showApi = ref(false);
     const pendingImageFile = ref(null);
     const botProfilePicker = ref(null);
+    const errorToDisplay = ref(null);
     let oldImageId = null;
 
     // Watch for when bot dialog opens with edit mode
@@ -55,10 +56,12 @@
                 console.log('Image uploaded:', data);
                 return data;
             } else {
+                errorToDisplay.value = 'An unexpected error occurred while uploading image, please try again later.';
                 throw new Error('Image upload failed.');
             }
         } catch (error) {
             console.error('Error uploading image:', error);
+            errorToDisplay.value = 'An unexpected error occurred, please try again later.';
             return null;
         }
     }
@@ -83,11 +86,12 @@
                 credentials: 'include'
             });
 
-            const responseText = await response.text();
-            console.log('Response text from creating bot:', responseText);
+            const responseJson = await response.json();
+            console.log('Response JSON from creating bot:', responseJson);
 
             if (!response.ok) {
                 console.error('Error while creating bot:', response.status);
+                errorToDisplay.value = responseJson.message;
                 return;
             }
 
@@ -96,6 +100,7 @@
             emit('refreshBots');
         } catch (error) {
             console.error('Error while creating bot:', error);
+            errorToDisplay.value = 'An unexpected error occurred, please try again later.';
         }
     }
 
@@ -126,13 +131,20 @@
             });
 
             console.log('Response status:', response.status);
+
+            const responseJson = await response.json();
+            console.log('Response JSON from saving bot:', responseJson);
             
             if (response.ok) {
                 closeBotDialog();
                 emit('refreshBots');
+            } else {
+                console.error('Error while saving bot:', responseJson.message);
+                errorToDisplay.value = responseJson.message;
             }
         } catch (error) {
             console.error('Error while fetching response:', error);
+            errorToDisplay.value = 'An unexpected error occurred, please try again later.';
         }
     }
 
@@ -161,6 +173,8 @@
             if (response.ok) {
                 closeBotDialog();
                 emit('refreshBots');
+            } else {
+                errorToDisplay.value = responseJson.message;
             }
         } catch (error) {
             console.log('An error occurred while deleting bot:', error);
@@ -172,6 +186,7 @@
     }
 
     function closeBotDialog() {
+        errorToDisplay.value = null;
         pendingImageFile.value = null;
         emit('closeBotDialog');
     }
@@ -201,6 +216,15 @@
                 required 
                 no-asterisk="true" 
                 supporting-text="Your bot's display name.">
+            </md-outlined-text-field>
+            <md-outlined-text-field 
+                class="dialog-settings-field" 
+                v-model="botToDisplay.persona" 
+                label="Bot persona" 
+                required 
+                no-asterisk="true" 
+                supporting-text="Your bot's persona or instructions."
+                type="textarea">
             </md-outlined-text-field>
             <div class="pfp-input">
                 <p>Your bot's profile picture</p>
@@ -257,6 +281,9 @@
                 <h2 class="bot-dialog-subheader">Danger Zone</h2>
                 <p>This action cannot be undone. All data associated with the bot will be lost.</p>
                 <md-outlined-button class="delete-button" type="button" @click="deleteBot()">Delete</md-outlined-button>
+            </div>
+            <div class="error-div">
+                <p>{{ errorToDisplay }}</p>
             </div>
             <div class="dialog-actions-div">
                 <md-outlined-button type="button" @click="closeBotDialog()">Cancel</md-outlined-button>
@@ -386,5 +413,9 @@
 
     .file-chosen {
         word-wrap: break-word;
+    }
+
+    .error-div {
+        color: var(--md-sys-color-error);
     }
 </style>

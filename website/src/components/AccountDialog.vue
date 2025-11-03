@@ -18,10 +18,14 @@
     const apiBaseUrl = import.meta.env.VITE_API_BASE_URL;
     const showOldPassword = ref(false);
     const showNewPassword = ref(false);
+    const errorToDisplay = ref(null);
+    const accountToEdit = ref(props.userAccount);
 
     async function editAccount() {
-        const accountToEdit = JSON.stringify(props.userAccount);
-        console.log('Editing account:', accountToEdit);
+        errorToDisplay.value = null;
+
+        const dataToSend = JSON.stringify(accountToEdit.value);
+        console.log('Editing account:', dataToSend);
 
         try {
             const response = await fetch(`${apiBaseUrl}/api/user/edit/`, {
@@ -29,7 +33,7 @@
                 headers: {
                     'Content-Type': 'application/json'
                 },
-                body: accountToEdit,
+                body: dataToSend,
                 credentials: 'include'
             });
 
@@ -46,9 +50,11 @@
                 closeAccountDialog();
             } else {
                 console.error('An error occurred while editing user.');
+                errorToDisplay.value = responseMessage;
             }
         } catch (error) {
             console.error('An error occurred while editing user:', error);
+            errorToDisplay.value = 'An unexpected error occurred, please try again later.';
         }
     }
 
@@ -57,6 +63,8 @@
             console.log('User canceled deletion of account.');
             return;
         }
+
+        errorToDisplay.value = null;
 
         try {
             const response = await fetch(`${apiBaseUrl}/api/user/delete/`, {
@@ -75,27 +83,39 @@
             if (response.ok) {
                 closeAccountDialog();
                 window.location.href = '/login';
+            } else {
+                errorToDisplay.value = responseMessage;
             }
         } catch (error) {
             console.error('Error while deleting user:', error);
+            errorToDisplay.value = 'An unexpected error occurred, please try again later.';
         }
     }
 
     function closeAccountDialog() {
+        errorToDisplay.value = null;
         showOldPassword.value = false;
         showNewPassword.value = false;
         emit('closeAccountDialog');
     }
+
+    watch(
+        () => props.userAccount,
+        (newUserAccount) => {
+            accountToEdit.value = newUserAccount ? { ...newUserAccount } : null; 
+        },
+        { deep: true, immediate: true }
+    );
 </script>
 
 <template>
-    <div class="account-dialog-backdrop" v-show="showAccountDialog" v-if="userAccount">
+    <div class="account-dialog-backdrop" v-show="showAccountDialog" v-if="accountToEdit">
         <form class="account-dialog" @submit.prevent="editAccount()">
             <h1 class="account-dialog-header">Account Settings</h1>
             
             <h2 class="account-dialog-subheader">General</h2>
             <md-outlined-text-field 
-                v-model="userAccount.id" 
+                v-model="accountToEdit.id" 
                 readOnly 
                 class="dialog-settings-field" 
                 label="Account ID" 
@@ -103,7 +123,7 @@
                 supporting-text="The ID of your account.">
             </md-outlined-text-field>
             <md-outlined-text-field 
-                v-model="userAccount.email" 
+                v-model="accountToEdit.email" 
                 class="dialog-settings-field" 
                 label="Email" 
                 no-asterisk="true" 
@@ -113,7 +133,7 @@
             <h2 class="account-dialog-subheader">Change Password</h2>
             <md-outlined-text-field 
                 class="dialog-settings-field" 
-                v-model="userAccount.old_password" 
+                v-model="accountToEdit.old_password" 
                 label="Old password" 
                 no-asterisk="true" 
                 supporting-text="Your current password associated with your account." 
@@ -125,7 +145,7 @@
             </md-outlined-text-field>
             <md-outlined-text-field 
                 class="dialog-settings-field" 
-                v-model="userAccount.new_password" 
+                v-model="accountToEdit.new_password" 
                 label="New password" 
                 no-asterisk="true" 
                 supporting-text="Your password you wish to set for your account." 
@@ -142,6 +162,10 @@
                 <md-outlined-button class="delete-button" type="button" @click="deleteAccount()">
                     Delete account
                 </md-outlined-button>
+            </div>
+
+            <div class="error-div" v-show="errorToDisplay">
+                <p>{{ errorToDisplay }}</p>
             </div>
             
             <div class="dialog-actions-div">
@@ -223,5 +247,9 @@
     .delete-button {
         --md-sys-color-outline: var(--md-sys-color-error);
         --md-sys-color-primary: var(--md-sys-color-error);
+    }
+
+    .error-div {
+        color: var(--md-sys-color-error);
     }
 </style>

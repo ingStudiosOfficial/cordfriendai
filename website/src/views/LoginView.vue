@@ -85,6 +85,7 @@
             document.location.href = '/dashboard';
         } catch (error) {
             console.error('Error sending user details:', error);
+            errorMessage.value = 'An unexpected error occurred, please try again later.';
         }
     }
 
@@ -138,6 +139,7 @@
             logUserIn();
         } catch (error) {
             console.error('Error sending user details:', error);
+            errorMessage.value = 'An unexpected error occurred, please try again later.';
         }
     }
 </script>
