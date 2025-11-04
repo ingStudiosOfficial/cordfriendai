@@ -32,3 +32,5 @@ todo.md
 *.sw?
 
 *.tsbuildinfo
+
+*.exe
