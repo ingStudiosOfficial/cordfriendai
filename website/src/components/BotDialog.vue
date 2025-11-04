@@ -245,6 +245,10 @@
                 <p v-else-if="botToDisplay.image_filename" class="file-chosen">{{ botToDisplay.image_filename }}</p>
                 <p v-else class="file-chosen">No file chosen</p>
             </div>
+            <h2 class="bot-dialog-subheader">Conversations</h2>
+            <div class="conv-div" v-show="isEditingBot">
+                <p v-if="botToDisplay.conversations" v-for="conversation in botToDisplay.conversations.slice(0, 3)">{{ conversation }}</p>
+            </div>
             <h2 class="bot-dialog-subheader">Server</h2>
             <md-outlined-text-field 
                 class="dialog-settings-field" 
@@ -417,5 +421,18 @@
 
     .error-div {
         color: var(--md-sys-color-error);
+    }
+
+    .conv-div {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        background-color: var(--md-sys-color-surface);
+        color: var(--md-sys-color-on-surface);
+        border-radius: 25px;
+        padding: 20px;
+        gap: 10px;
+        width: 50%;
+        box-sizing: border-box;
     }
 </style>

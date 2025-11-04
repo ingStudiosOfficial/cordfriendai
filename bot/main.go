@@ -4,11 +4,15 @@ import (
 	"context"
 	"crypto/aes"
 	"crypto/cipher"
+	"encoding/base64"
 	"encoding/hex"
 	"fmt"
+	"io/ioutil"
 	"log"
+	"net/http"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 
 	"github.com/bwmarrin/discordgo"
@@ -27,15 +31,18 @@ type EncryptedAPI struct {
 }
 
 type Bot struct {
-	Name        string       `bson:"name"`
-	Persona     string       `bson:"persona"`
-	ServerID    string       `bson:"server_id"`
-	UserID      string       `bson:"user_id"`
-	GoogleAIAPI EncryptedAPI `bson:"google_ai_api"`
-	Image       string       `bson"image_id"`
+	Name          string       `bson:"name"`
+	Persona       string       `bson:"persona"`
+	ServerID      string       `bson:"server_id"`
+	UserID        string       `bson:"user_id"`
+	GoogleAIAPI   EncryptedAPI `bson:"google_ai_api"`
+	Image         string       `bson:"image_id"`
+	Conversations []string     `bson:"conversations"`
 }
 
 var botsCollection *mongo.Collection
+
+var dg *discordgo.Session
 
 func main() {
 	err := godotenv.Load()
@@ -58,8 +65,9 @@ func main() {
 	fmt.Println("Discord token:", discordToken)
 
 	// Create Discord session
-	dg, err := discordgo.New("Bot " + discordToken)
-	if err != nil {
+	var errds error
+	dg, errds = discordgo.New("Bot " + discordToken)
+	if errds != nil {
 		log.Fatal("Error starting Discord session:", err)
 	}
 
@@ -72,12 +80,17 @@ func main() {
 				Description: "Sets the nickname to the saved name from the Cordfriend AI dashboard.",
 				Type:        discordgo.ChatApplicationCommand,
 			},
+			{
+				Name:        "load-avatar",
+				Description: "Sets the avatar to the saved avatar from the Cordfriend AI dashboard.",
+				Type:        discordgo.ChatApplicationCommand,
+			},
 		}
 
 		registeredCommands := make([]*discordgo.ApplicationCommand, len(commands))
 
 		for i, v := range commands {
-			cmd, err := s.ApplicationCommandCreate(s.State.User.ID, "1164025238883946537", v)
+			cmd, err := s.ApplicationCommandCreate(s.State.User.ID, "", v)
 			if err != nil {
 				log.Panicf("Cannot create '%v' command: %v", v.Name, err)
 			}
@@ -137,7 +150,6 @@ func connectToMongo() *mongo.Client {
 }
 
 func handleCommand(s *discordgo.Session, i *discordgo.InteractionCreate) {
-	// Only handle application commands
 	if i.Type != discordgo.InteractionApplicationCommand {
 		return
 	}
@@ -145,6 +157,29 @@ func handleCommand(s *discordgo.Session, i *discordgo.InteractionCreate) {
 	switch i.ApplicationCommandData().Name {
 	case "load-name":
 		updateBotNickname(s, i.GuildID, i)
+
+	case "load-avatar":
+		err := s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
+			Type: discordgo.InteractionResponseDeferredChannelMessageWithSource,
+		})
+		if err != nil {
+			fmt.Println("Failed to defer interaction:", err)
+			return
+		}
+
+		err = updateBotImage(s, i.GuildID)
+
+		responseContent := "Avatar updated successfully!"
+		if err != nil {
+			responseContent = fmt.Sprintf("Failed to update avatar: %v", err)
+		}
+
+		_, err = s.InteractionResponseEdit(i.Interaction, &discordgo.WebhookEdit{
+			Content: &responseContent,
+		})
+		if err != nil {
+			fmt.Println("Failed to edit interaction response:", err)
+		}
 	}
 }
 
@@ -173,11 +208,13 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 		fmt.Println("Returning response:", response)
 
 		// Send response back to channel
-		s.ChannelMessageSend(m.ChannelID, response)
+		s.ChannelMessageSend(m.ChannelID, truncateString(response, 2000))
 	}
 }
 
 func requestGenAi(m *discordgo.MessageCreate) string {
+	fmt.Println("Generating response...")
+
 	apiKey, err := fetchApiKey(m)
 	if err != nil {
 		fmt.Println("Error while fetching API key:", err)
@@ -188,13 +225,17 @@ func requestGenAi(m *discordgo.MessageCreate) string {
 		return "Could not fetch API key for this server."
 	}
 
-	ctx := context.Background()
+	var conversationsString string
 
-	client, err := genai.NewClient(ctx, option.WithAPIKey(apiKey))
-
+	conversations, err := fetchConversations(m.GuildID)
 	if err != nil {
-		log.Fatal("Error creating new Gemini client:", err)
+		fmt.Print("Error while fetching conversations:", err)
+		conversationsString = "No conversations stored in history yet."
 	}
+
+	conversationsString = strings.Join(conversations, "\n")
+
+	fmt.Println("Conversations:", conversationsString)
 
 	var systemInstructions string
 	fetchedInstructions, err := fetchBotPersona(m.GuildID)
@@ -207,14 +248,25 @@ func requestGenAi(m *discordgo.MessageCreate) string {
 		systemInstructions = fetchedInstructions
 	}
 
-	var promptToSend = "System message: " + systemInstructions + "User message: " + m.Content
+	var sentUser = m.Author.DisplayName()
+	fmt.Println("User who sent message:", sentUser)
+
+	ctx := context.Background()
+
+	client, err := genai.NewClient(ctx, option.WithAPIKey(apiKey))
+
+	if err != nil {
+		log.Fatal("Error creating new Gemini client:", err)
+	}
+
+	var promptToSend = "Conversation history: " + conversationsString + "System message: " + systemInstructions + "User '" + sentUser + "' sent the message: " + m.Content
 
 	resp, err := client.GenerativeModel("gemini-2.5-flash").GenerateContent(
 		ctx,
 		genai.Text(promptToSend),
 	)
 	if err != nil {
-		log.Fatal("Error while generating content:", err)
+		fmt.Println("Error while generating content:", err)
 	}
 
 	var response string = ""
@@ -225,6 +277,10 @@ func requestGenAi(m *discordgo.MessageCreate) string {
 				response += fmt.Sprintf("%v", part)
 			}
 		}
+	}
+
+	if response != "" {
+		addConversations(m.GuildID, response)
 	}
 
 	return response
@@ -341,15 +397,15 @@ func updateBotNickname(s *discordgo.Session, guildID string, i *discordgo.Intera
 	}
 
 	fmt.Println("Changing nickname for guild ID:", guildID)
-	fmt.Println("Changing nickname for bot:", s.State.User.ID)
 
-	err = s.GuildMemberNickname(guildID, s.State.User.ID, nickname)
+	// Fix: Use "@me" to refer to the bot itself
+	err = s.GuildMemberNickname(guildID, "@me", nickname)
 	if err != nil {
 		return fmt.Errorf("failed to set nickname: %w", err)
 	}
 
 	err = s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
-		Type: discordgo.InteractionResponseChannelMessageWithSource, // Sends message visible in channel
+		Type: discordgo.InteractionResponseChannelMessageWithSource,
 		Data: &discordgo.InteractionResponseData{
 			Content: "Nickname updated successfully!",
 		},
@@ -377,6 +433,18 @@ func fetchBotPersona(guildID string) (string, error) {
 	return settings.Persona, nil
 }
 
+func truncateString(s string, maxLength int) string {
+	// Convert the string to a slice of runes to handle multi-byte characters correctly.
+	runes := []rune(s)
+
+	if len(runes) <= maxLength {
+		return s
+	}
+
+	// Return runes back as string
+	return string(runes[:maxLength])
+}
+
 func fetchBotImage(guildID string) (string, error) {
 	var settings Bot
 	filter := bson.M{"server_id": guildID}
@@ -388,7 +456,104 @@ func fetchBotImage(guildID string) (string, error) {
 		return "", err
 	}
 
-	fmt.Println("Persona fetched successfully:", settings.Persona)
+	fmt.Println("Image fetched successfully:", settings.Image)
 
-	return settings.Image, nil
+	return "https://cordfriendai-server.onrender.com/api/bot/image-download/" + settings.Image, nil
+}
+
+func updateBotImage(s *discordgo.Session, guildID string) error {
+	var contentType string
+	var base64img string
+
+	avatarUrl, err := fetchBotImage(guildID)
+	if err != nil {
+		fmt.Println("Error while fetching bot image:", err)
+		return err
+	}
+
+	if avatarUrl == "" {
+		fmt.Println("Could not fetch avatar URL.")
+		return fmt.Errorf("no avatar URL configured")
+	}
+
+	fmt.Println("Avatar URL:", avatarUrl)
+
+	resp, err := http.Get(avatarUrl)
+	if err != nil {
+		fmt.Println("Error while fetching avatar:", err)
+		return err
+	}
+	defer resp.Body.Close()
+
+	img, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		fmt.Println("Error while reading avatar:", err)
+		return err
+	}
+
+	fmt.Printf("Original image size: %d bytes\n", len(img))
+
+	contentType = http.DetectContentType(img)
+
+	validTypes := map[string]bool{
+		"image/png":  true,
+		"image/jpeg": true,
+		"image/gif":  true,
+		"image/webp": true,
+	}
+
+	if !validTypes[contentType] {
+		fmt.Println("Unsupported image format:", contentType)
+		return fmt.Errorf("unsupported image format: %s", contentType)
+	}
+
+	base64img = base64.StdEncoding.EncodeToString(img)
+	fmt.Printf("Base64 length: %d\n", len(base64img))
+
+	avatar := fmt.Sprintf("data:%s;base64,%s", contentType, base64img)
+
+	user, err := s.UserUpdate("", avatar, "")
+	if err != nil {
+		fmt.Println("Error updating avatar:", err)
+		return err
+	}
+
+	fmt.Printf("Avatar updated successfully! Avatar hash: %s\n", user.Avatar)
+	return nil
+}
+
+func fetchConversations(guildID string) ([]string, error) {
+	var settings Bot
+	filter := bson.M{"server_id": guildID}
+	err := botsCollection.FindOne(context.TODO(), filter).Decode(&settings)
+	if err != nil {
+		if err == mongo.ErrNoDocuments {
+			return nil, nil
+		}
+		return nil, err
+	}
+
+	fmt.Println("Conversations fetched successfully:", settings.Conversations)
+
+	return settings.Conversations, nil
+}
+
+func addConversations(guildID string, conversation string) error {
+	filter := bson.M{"server_id": guildID}
+	update := bson.M{
+		"$push": bson.M{
+			"conversations": bson.M{
+				"$each":     []string{conversation},
+				"$position": 0, // Prepend at index 0
+			},
+		},
+	}
+
+	_, err := botsCollection.UpdateOne(context.TODO(), filter, update)
+	if err != nil {
+		fmt.Println("Error while adding to conversation history:", err)
+		return err
+	}
+
+	return nil
 }

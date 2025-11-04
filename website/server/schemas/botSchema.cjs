@@ -9,7 +9,8 @@ const botUpdateSchema = Joi.object({
     google_ai_api: Joi.string().required(),
     image_id: Joi.string().length(24).hex().required(),
     image_filename: Joi.string().required(),
-    old_image_id: Joi.string().length(24).hex().optional()
+    old_image_id: Joi.string().length(24).hex().optional(),
+    conversations: Joi.array().optional()
 });
 
 module.exports = botUpdateSchema;
