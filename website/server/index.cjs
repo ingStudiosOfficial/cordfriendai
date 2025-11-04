@@ -181,7 +181,7 @@ connectToMongodb().then(() => {
 				secure: process.env.NODE_ENV === 'production',
 				sameSite: 'lax',
 				maxAge: cookieAgeMs,
-				domain: process.env.CLIENT_URL
+				domain: process.env.CLIENT_DOMAIN
 			}).json({
 				'message': 'You have successfully logged in, redirecting...'
 			});
