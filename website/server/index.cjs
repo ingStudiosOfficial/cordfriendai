@@ -179,9 +179,8 @@ connectToMongodb().then(() => {
 			res.status(200).cookie('auth_token', token, {
 				httpOnly: true,
 				secure: process.env.NODE_ENV === 'production',
-				sameSite: 'lax',
-				maxAge: cookieAgeMs,
-				domain: process.env.CLIENT_DOMAIN
+				sameSite: 'none',
+				maxAge: cookieAgeMs
 			}).json({
 				'message': 'You have successfully logged in, redirecting...'
 			});
@@ -262,7 +261,7 @@ connectToMongodb().then(() => {
 		res.clearCookie('auth_token', {
 			httpOnly: true,
 			secure: process.env.NODE_ENV === 'production',
-			sameSite: 'lax',
+			sameSite: 'none',
 			path: '/'
 		});
 		
@@ -444,7 +443,7 @@ connectToMongodb().then(() => {
 			res.clearCookie('auth_token', {
 				httpOnly: true,
 				secure: process.env.NODE_ENV === 'production',
-				sameSite: 'lax',
+				sameSite: 'none',
 				path: '/'
 			});
 
