@@ -242,6 +242,7 @@ func requestGenAi(m *discordgo.MessageCreate) string {
 	}
 
 	var promptToSend = "Conversation history: " + conversationsString + "System message: " + systemInstructions + "User '" + sentUser + "' sent the message: " + m.Content
+	fmt.Println("Sending prompt:", promptToSend)
 
 	resp, err := client.GenerativeModel("gemini-2.5-flash").GenerateContent(
 		ctx,
