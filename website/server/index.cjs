@@ -478,6 +478,7 @@ connectToMongodb().then(() => {
 
 		const botDataToStore = {
 			'name': botData.name,
+			'persona': botData.persona,
 			'server_id': botData.server_id,
 			'user_id': botData.user_id,
 			'google_ai_api': encryptApiKey(botData.google_ai_api),
