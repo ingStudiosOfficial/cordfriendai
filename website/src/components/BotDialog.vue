@@ -96,6 +96,11 @@
             }
 
             console.log('Bot created successfully!');
+
+            if (!props.isEditingBot) {
+                window.open("https://discord.com/oauth2/authorize?client_id=1425271680078581832&permissions=201575424&integration_type=0&scope=bot", '_blank');
+            }
+
             closeBotDialog();
             emit('refreshBots');
         } catch (error) {
@@ -181,6 +186,39 @@
         }
     }
 
+    async function deleteConv() {
+        const botToDelete = JSON.stringify(props.botToDisplay);
+        console.log('Deleting bot:', botToDelete);
+
+        if (!confirm(`Do you wish to delete all conversations from ${props.botToDisplay.name}? This action cannot be undone.`)) {
+            console.log('User cancelled deletion.');
+            return;
+        }
+
+        try {
+            const response = await fetch(`${apiBaseUrl}/api/bot/delete-conv/`, {
+                method: 'DELETE',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: botToDelete,
+                credentials: 'include'
+            });
+
+            const responseJson = await response.json();
+            console.log('Response JSON:', responseJson);
+
+            if (response.ok) {
+                closeBotDialog();
+                emit('refreshBots');
+            } else {
+                errorToDisplay.value = responseJson.message;
+            }
+        } catch (error) {
+            console.log('An error occurred while deleting conversations:', error);
+        }
+    }
+
     function openFilePicker() {
         botProfilePicker.value.click();
     }
@@ -189,6 +227,14 @@
         errorToDisplay.value = null;
         pendingImageFile.value = null;
         emit('closeBotDialog');
+    }
+
+    function truncateString(str, maxLength) {
+        if (str.length > maxLength) {
+            return str.slice(0, maxLength - 3) + "..."; 
+        } else {
+            return str;
+        }
     }
 </script>
 
@@ -247,7 +293,11 @@
             </div>
             <h2 class="bot-dialog-subheader">Conversations</h2>
             <div class="conv-div" v-show="isEditingBot">
-                <p v-if="botToDisplay.conversations" v-for="conversation in botToDisplay.conversations.slice(0, 3)">{{ conversation }}</p>
+                <div class="conv-group" v-if="botToDisplay.conversations && botToDisplay.conversations.length !== 0" v-for="conversation_group in botToDisplay.conversations.slice(0, 3)">
+                    <div v-if="conversation_group.user" class="message-bubble right">{{ truncateString(conversation_group.user, 200) }}</div>
+                    <div v-if="conversation_group.bot" class="message-bubble left">{{ truncateString(conversation_group.bot, 200) }}</div>
+                </div>
+                <p v-if="botToDisplay.conversations && botToDisplay.conversations.length === 0">No conversations yet.</p>
             </div>
             <h2 class="bot-dialog-subheader">Server</h2>
             <md-outlined-text-field 
@@ -283,8 +333,10 @@
             </md-outlined-text-field>
             <div class="danger-zone" v-show="isEditingBot">
                 <h2 class="bot-dialog-subheader">Danger Zone</h2>
+                <p>This action cannot be undone. All conversations associated with the bot will be lost</p>
+                <md-outlined-button class="delete-button" type="button" @click="deleteConv()">Delete conversations</md-outlined-button>
                 <p>This action cannot be undone. All data associated with the bot will be lost.</p>
-                <md-outlined-button class="delete-button" type="button" @click="deleteBot()">Delete</md-outlined-button>
+                <md-outlined-button class="delete-button" type="button" @click="deleteBot()">Delete bot</md-outlined-button>
             </div>
             <div class="error-div">
                 <p>{{ errorToDisplay }}</p>
@@ -431,8 +483,46 @@
         color: var(--md-sys-color-on-surface);
         border-radius: 25px;
         padding: 20px;
-        gap: 10px;
         width: 50%;
         box-sizing: border-box;
+    }
+
+    .message-bubble {
+        position: relative;
+        background-color: var(--md-sys-color-surface-variant);
+        color: var(--md-sys-color-on-surface-variant);
+        border-radius: 10px;
+        padding: 10px 15px;
+        margin: 10px;
+        max-width: 70%;
+        word-wrap: break-word;
+    }
+
+    .message-bubble.left::before {
+        content: '';
+        position: absolute;
+        top: 50%;
+        left: -10px;
+        transform: translateY(-50%);
+        border-width: 10px 10px 10px 0;
+        border-style: solid;
+        border-color: transparent var(--md-sys-color-surface-variant) transparent transparent;
+    }
+
+    .message-bubble.right {
+        background-color: var(--md-sys-color-primary-container);
+        color: var(--md-sys-color-on-primary-container);
+        margin-left: auto;
+    }
+
+    .message-bubble.right::before {
+        content: '';
+        position: absolute;
+        top: 50%;
+        right: -10px;
+        transform: translateY(-50%);
+        border-width: 10px 0 10px 10px;
+        border-style: solid;
+        border-color: transparent transparent transparent var(--md-sys-color-primary-container);
     }
 </style>

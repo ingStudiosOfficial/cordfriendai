@@ -706,11 +706,50 @@ connectToMongodb().then(() => {
 
 		try {
 			const result = await deleteBot(botsCollection, usersCollection, botImagesBucket, botData._id, req.user.id, botData.image_id);
-			res.status(200).json(result);
+			res.status(200).json({
+				'message': 'Bot deleted successfully.',
+				'result': result
+			});
 		} catch (error) {
 			console.log('An error occurred while deleting bot:', error);
 			
 			// Map error messages to appropriate status codes
+			if (error.message.includes('Invalid') || error.message.includes('format')) {
+				return sendErrorResponse(res, 400, error.message);
+			}
+			if (error.message.includes('not found')) {
+				return sendErrorResponse(res, 404, error.message);
+			}
+
+			return sendErrorResponse(res, 500, 'An internal server error occurred.', error);
+		}
+	});
+
+	app.delete('/api/bot/delete-conv/', authenticateToken(usersCollection), async (req, res) => {
+		if (!botsCollection) {
+			return sendErrorResponse(res, 503, 'The bots collection is unavailable.');
+		}
+
+		const botData = req.body;
+		console.log('Bot data:', botData);
+
+		if (!ObjectId.isValid(botData._id)) {
+			return sendErrorResponse(res, 400, 'Invalid bot ID format.');
+		}
+
+		try {
+			const result = await botsCollection.updateOne(
+				{ '_id': new ObjectId(botData._id) },
+				{ $set: { 'conversations': [] } }
+			);
+
+			res.status(200).json({
+				'message': 'Bot conversations deleted successfully.',
+				'result': result
+			});
+		} catch (error) {
+			console.log('An error occurred while deleting bot:', error);
+			
 			if (error.message.includes('Invalid') || error.message.includes('format')) {
 				return sendErrorResponse(res, 400, error.message);
 			}

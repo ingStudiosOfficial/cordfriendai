@@ -4,15 +4,12 @@ import (
 	"context"
 	"crypto/aes"
 	"crypto/cipher"
-	"encoding/base64"
 	"encoding/hex"
+	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"log"
-	"net/http"
 	"os"
 	"os/signal"
-	"strings"
 	"syscall"
 
 	"github.com/bwmarrin/discordgo"
@@ -30,14 +27,19 @@ type EncryptedAPI struct {
 	EncryptedData string `bson:"encryptedData" json:"encryptedData"`
 }
 
+type Conversation struct {
+	User string `bson:"user"`
+	Bot  string `bson:"bot"`
+}
+
 type Bot struct {
-	Name          string       `bson:"name"`
-	Persona       string       `bson:"persona"`
-	ServerID      string       `bson:"server_id"`
-	UserID        string       `bson:"user_id"`
-	GoogleAIAPI   EncryptedAPI `bson:"google_ai_api"`
-	Image         string       `bson:"image_id"`
-	Conversations []string     `bson:"conversations"`
+	Name          string         `bson:"name"`
+	Persona       string         `bson:"persona"`
+	ServerID      string         `bson:"server_id"`
+	UserID        string         `bson:"user_id"`
+	GoogleAIAPI   EncryptedAPI   `bson:"google_ai_api"`
+	Image         string         `bson:"image_id"`
+	Conversations []Conversation `bson:"conversations"`
 }
 
 var botsCollection *mongo.Collection
@@ -80,11 +82,6 @@ func main() {
 				Description: "Sets the nickname to the saved name from the Cordfriend AI dashboard.",
 				Type:        discordgo.ChatApplicationCommand,
 			},
-			{
-				Name:        "load-avatar",
-				Description: "Sets the avatar to the saved avatar from the Cordfriend AI dashboard.",
-				Type:        discordgo.ChatApplicationCommand,
-			},
 		}
 
 		registeredCommands := make([]*discordgo.ApplicationCommand, len(commands))
@@ -101,7 +98,7 @@ func main() {
 	dg.AddHandler(handleCommand)
 	dg.AddHandler(messageCreate)
 
-	dg.Identify.Intents = discordgo.IntentsGuildMessages
+	dg.Identify.Intents = discordgo.IntentsGuildMessages | discordgo.IntentsMessageContent
 
 	// Open a websocket to connect to Discord
 	err = dg.Open()
@@ -157,29 +154,6 @@ func handleCommand(s *discordgo.Session, i *discordgo.InteractionCreate) {
 	switch i.ApplicationCommandData().Name {
 	case "load-name":
 		updateBotNickname(s, i.GuildID, i)
-
-	case "load-avatar":
-		err := s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
-			Type: discordgo.InteractionResponseDeferredChannelMessageWithSource,
-		})
-		if err != nil {
-			fmt.Println("Failed to defer interaction:", err)
-			return
-		}
-
-		err = updateBotImage(s, i.GuildID)
-
-		responseContent := "Avatar updated successfully!"
-		if err != nil {
-			responseContent = fmt.Sprintf("Failed to update avatar: %v", err)
-		}
-
-		_, err = s.InteractionResponseEdit(i.Interaction, &discordgo.WebhookEdit{
-			Content: &responseContent,
-		})
-		if err != nil {
-			fmt.Println("Failed to edit interaction response:", err)
-		}
 	}
 }
 
@@ -204,10 +178,9 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 	if mentioned {
 		fmt.Println("Bot mentioned, responding.")
 
-		var response = requestGenAi(m)
+		response := requestGenAi(m)
 		fmt.Println("Returning response:", response)
 
-		// Send response back to channel
 		s.ChannelMessageSend(m.ChannelID, truncateString(response, 2000))
 	}
 }
@@ -231,9 +204,15 @@ func requestGenAi(m *discordgo.MessageCreate) string {
 	if err != nil {
 		fmt.Print("Error while fetching conversations:", err)
 		conversationsString = "No conversations stored in history yet."
+	} else {
+		conversationsByte, err := json.Marshal(conversations)
+		if err != nil {
+			fmt.Print("Error while converting conversations:", err)
+			conversationsString = "No conversations stored in history yet."
+		} else {
+			conversationsString = string(conversationsByte)
+		}
 	}
-
-	conversationsString = strings.Join(conversations, "\n")
 
 	fmt.Println("Conversations:", conversationsString)
 
@@ -250,6 +229,9 @@ func requestGenAi(m *discordgo.MessageCreate) string {
 
 	var sentUser = m.Author.DisplayName()
 	fmt.Println("User who sent message:", sentUser)
+
+	var sentUserId = m.Author.ID
+	fmt.Println("User ID who sent message:", sentUserId)
 
 	ctx := context.Background()
 
@@ -280,10 +262,10 @@ func requestGenAi(m *discordgo.MessageCreate) string {
 	}
 
 	if response != "" {
-		addConversations(m.GuildID, response)
+		addConversations(m.GuildID, m.Content, response)
 	}
 
-	return response
+	return "<@" + sentUserId + "> " + response
 }
 
 // pkcs7 unpad
@@ -461,68 +443,7 @@ func fetchBotImage(guildID string) (string, error) {
 	return "https://cordfriendai-server.onrender.com/api/bot/image-download/" + settings.Image, nil
 }
 
-func updateBotImage(s *discordgo.Session, guildID string) error {
-	var contentType string
-	var base64img string
-
-	avatarUrl, err := fetchBotImage(guildID)
-	if err != nil {
-		fmt.Println("Error while fetching bot image:", err)
-		return err
-	}
-
-	if avatarUrl == "" {
-		fmt.Println("Could not fetch avatar URL.")
-		return fmt.Errorf("no avatar URL configured")
-	}
-
-	fmt.Println("Avatar URL:", avatarUrl)
-
-	resp, err := http.Get(avatarUrl)
-	if err != nil {
-		fmt.Println("Error while fetching avatar:", err)
-		return err
-	}
-	defer resp.Body.Close()
-
-	img, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		fmt.Println("Error while reading avatar:", err)
-		return err
-	}
-
-	fmt.Printf("Original image size: %d bytes\n", len(img))
-
-	contentType = http.DetectContentType(img)
-
-	validTypes := map[string]bool{
-		"image/png":  true,
-		"image/jpeg": true,
-		"image/gif":  true,
-		"image/webp": true,
-	}
-
-	if !validTypes[contentType] {
-		fmt.Println("Unsupported image format:", contentType)
-		return fmt.Errorf("unsupported image format: %s", contentType)
-	}
-
-	base64img = base64.StdEncoding.EncodeToString(img)
-	fmt.Printf("Base64 length: %d\n", len(base64img))
-
-	avatar := fmt.Sprintf("data:%s;base64,%s", contentType, base64img)
-
-	user, err := s.UserUpdate("", avatar, "")
-	if err != nil {
-		fmt.Println("Error updating avatar:", err)
-		return err
-	}
-
-	fmt.Printf("Avatar updated successfully! Avatar hash: %s\n", user.Avatar)
-	return nil
-}
-
-func fetchConversations(guildID string) ([]string, error) {
+func fetchConversations(guildID string) ([]Conversation, error) {
 	var settings Bot
 	filter := bson.M{"server_id": guildID}
 	err := botsCollection.FindOne(context.TODO(), filter).Decode(&settings)
@@ -538,12 +459,17 @@ func fetchConversations(guildID string) ([]string, error) {
 	return settings.Conversations, nil
 }
 
-func addConversations(guildID string, conversation string) error {
+func addConversations(guildID string, userConv string, botConv string) error {
+	var conversation Conversation = Conversation{
+		userConv,
+		botConv,
+	}
+
 	filter := bson.M{"server_id": guildID}
 	update := bson.M{
 		"$push": bson.M{
 			"conversations": bson.M{
-				"$each":     []string{conversation},
+				"$each":     []Conversation{conversation},
 				"$position": 0, // Prepend at index 0
 			},
 		},
