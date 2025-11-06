@@ -430,22 +430,6 @@ func truncateString(s string, maxLength int) string {
 	return string(runes[:maxLength])
 }
 
-func fetchBotImage(guildID string) (string, error) {
-	var settings Bot
-	filter := bson.M{"server_id": guildID}
-	err := botsCollection.FindOne(context.TODO(), filter).Decode(&settings)
-	if err != nil {
-		if err == mongo.ErrNoDocuments {
-			return "", nil
-		}
-		return "", err
-	}
-
-	fmt.Println("Image fetched successfully:", settings.Image)
-
-	return "https://cordfriendai-server.onrender.com/api/bot/image-download/" + settings.Image, nil
-}
-
 func fetchConversations(guildID string) ([]Conversation, error) {
 	var settings Bot
 	filter := bson.M{"server_id": guildID}
