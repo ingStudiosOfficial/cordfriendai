@@ -40,6 +40,9 @@
 	<main>
 		<RouterView />
 	</main>
+	<footer v-if="$route.name === 'about'">
+		<p>Built with 💖 by Ethan Lee from (ing) Studios.</p>
+	</footer>
 </template>
 
 <style scoped>

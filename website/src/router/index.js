@@ -10,7 +10,7 @@ import LoginView from '@/views/LoginView.vue';
 import { checkAuthStatus } from '@/services/auth';
 
 const routes = [
-    { path: '/', name: 'about', component: AboutView, meta: { title: 'About', requiresAuth: false } },
+    { path: '/', name: 'about', component: AboutView, meta: { title: 'About', hideHeader: true, requiresAuth: false } },
     { path: '/dashboard', name: 'dashboard', component: DashboardView, meta : { title: 'Dashboard', requiresAuth: true, showAccountButton: true } },
     { path: '/login', name: 'login', component: LoginView, meta : { title: 'Login', hideHeader: true, requiresAuth: false } },
 ];
