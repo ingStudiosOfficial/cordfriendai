@@ -238,7 +238,8 @@ func requestGenAi(m *discordgo.MessageCreate) string {
 	client, err := genai.NewClient(ctx, option.WithAPIKey(apiKey))
 
 	if err != nil {
-		log.Fatal("Error creating new Gemini client:", err)
+		fmt.Println("Error creating new Gemini client:", err)
+		return "Error creating new Gemini client."
 	}
 
 	var promptToSend = "Conversation history: " + conversationsString + "System message: " + systemInstructions + "User '" + sentUser + "' sent the message: " + m.Content
@@ -250,6 +251,7 @@ func requestGenAi(m *discordgo.MessageCreate) string {
 	)
 	if err != nil {
 		fmt.Println("Error while generating content:", err)
+		return "There was an error while generating your content. If this persists, try deleting your bots conversations"
 	}
 
 	var response string = ""
