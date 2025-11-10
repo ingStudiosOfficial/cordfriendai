@@ -4,8 +4,8 @@
     <p align="center">Contribute to the <b>free</b>, <b>open-source</b> AI Discord bot built in Golang.</p>
     <p align="center">
         <a href="#about">Guidelines</a> •
-        <a href="#features">Checklist</a> •
-        <a href="#development">Submit a Pull Request</a> 
+        <a href="#checklist">Checklist</a> •
+        <a href="#submit-a-pull-request">Submit a Pull Request</a> 
     </p>
     <hr />
 </p>
