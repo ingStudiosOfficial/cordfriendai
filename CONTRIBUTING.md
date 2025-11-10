@@ -3,7 +3,7 @@
     <h1 align="center">Contributing - Cordfriend AI</h1>
     <p align="center">Contribute to the <b>free</b>, <b>open-source</b> AI Discord bot built in Golang.</p>
     <p align="center">
-        <a href="#about">Guidelines</a> •
+        <a href="#guidelines">Guidelines</a> •
         <a href="#checklist">Checklist</a> •
         <a href="#submit-a-pull-request">Submit a Pull Request</a> 
     </p>
