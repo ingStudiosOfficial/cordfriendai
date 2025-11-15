@@ -6,7 +6,7 @@
         <a href="#about">About</a> •
         <a href="#features">Features</a> •
         <a href="#development">Development</a> •
-        <a href="#features">Contributing</a> •
+        <a href="#contributing">Contributing</a> •
         <a href="#license">License</a>
     </p>
     <hr />
