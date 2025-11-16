@@ -3,11 +3,16 @@ const jwt = require('jsonwebtoken');
 const path = require('path');
 require('dotenv').config({ path: path.join(__dirname, '../../.env') });
 
+const callbackURL =
+    process.env.NODE_ENV === 'production'
+        ? 'https://cordfriendai-server.onrender.com/api/oauth2/callback/google/'
+        : 'http://localhost:3005/api/oauth2/callback/google/';
+
 function createGoogleStrategy(usersCollection, credsCollection) {
     return new GoogleStrategy({
         clientID: process.env.GOOGLE_CLIENT_ID,
         clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-        callbackURL: '/api/oauth2/callback/google/',
+        callbackURL: callbackURL,
         scope: ['profile', 'email']
     }, async function verify(issuer, profile, cb) {
         try {
