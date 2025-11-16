@@ -1,6 +1,5 @@
 const express = require('express');
 const cors = require('cors');
-const fetch = (...args) => import('node-fetch').then(({default: fetch}) => fetch(...args));
 const path = require('path');
 require('dotenv').config({ path: path.join(__dirname, '../.env') });
 const { MongoClient, ObjectId, GridFSBucket } = require('mongodb');
@@ -8,9 +7,10 @@ const { Readable } = require('stream');
 const multer = require('multer');
 const jwt = require('jsonwebtoken');
 const cookieParser = require('cookie-parser');
+const session = require('express-session');
+const passport = require('passport');
 
 // Import utilities
-const { hashPassword, authenticateToken } = require('./utilities/authentication.cjs');
 const { checkFileType } = require('./utilities/filetype.cjs');
 const { sendErrorResponse } = require('./utilities/errorHelpers.cjs');
 const { encryptApiKey, decryptApiKey } = require('./utilities/apiEncryption.cjs');
@@ -21,6 +21,10 @@ const { validateUser } = require('./middleware/validateUser.cjs');
 const { validateBotInput } = require('./middleware/validateBot.cjs');
 const { validateUserInput } = require('./middleware/validateUserInput.cjs');
 
+// Import authentication
+const { hashPassword, authenticateToken } = require('./authentication/authentication.cjs');
+const { createGoogleStrategy } = require('./authentication/google_strategy.cjs');
+
 const app = express();
 
 app.use(cors({
@@ -30,6 +34,13 @@ app.use(cors({
 }));
 app.use(cookieParser());
 app.use(express.json());
+app.use(session({
+    secret: process.env.SESSION_SECRET,
+    resave: false,
+    saveUninitialized: true,
+    cookie: { secure: process.env.NODE_ENV === 'production' }
+}));
+app.use(passport.initialize());
 
 // MongoDB setup
 const mongodbUri = process.env.MONGODB_CONNECTION_STRING;
@@ -62,6 +73,7 @@ let database;
 // The DB collections
 let usersCollection;
 let botsCollection;
+let credsCollection;
 
 // The buckets
 let botImagesBucket;
@@ -93,6 +105,7 @@ async function connectToMongodb() {
 		// Initialize all the collections
 		usersCollection = database.collection('users');
 		botsCollection = database.collection('bots');
+		credsCollection = database.collection('creds');
 
 		// Initialize all the buckets
 		botImagesBucket = new GridFSBucket(database, {
@@ -104,8 +117,15 @@ async function connectToMongodb() {
 	}
 }
 
+function setupPassport() {
+	// Passport setup
+	passport.use(createGoogleStrategy(usersCollection, credsCollection));
+}
+
 connectToMongodb().then(() => {
 	app.listen(port, () => { console.log(`App is listening on port ${port}.`) });
+
+	setupPassport();
 
 	app.get('/api/verify-auth/', authenticateToken(usersCollection), (req, res) => {
 		console.log('User authenticated with valid JWT token, responding.');
@@ -455,6 +475,28 @@ connectToMongodb().then(() => {
 			sendErrorResponse(res, 500, 'An internal server error occurred.', error);
 		}
 	});
+
+	app.get('/api/oauth2/google/', passport.authenticate('google', { scope: ['profile', 'email'] }));
+
+	app.get('/api/oauth2/callback/google/',
+		passport.authenticate('google', {
+			failureRedirect: `${process.env.CLIENT_URL}/login`,
+			session: false
+		}),
+		(req, res) => {
+			const token = req.user.token;
+
+			const DURATION_DAYS = 7;
+			const cookieAgeMs = DURATION_DAYS * 24 * 60 * 60 * 1000; 
+
+			res.status(200).cookie('auth_token', token, {
+				httpOnly: true,
+				secure: process.env.NODE_ENV === 'production',
+				sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+				maxAge: cookieAgeMs
+			}).redirect(`${process.env.CLIENT_URL}/dashboard`);
+		}
+	);
 
 	app.post('/api/bot/create/', authenticateToken(usersCollection), validateBotInput, async (req, res) => {
 		if (!botsCollection) {

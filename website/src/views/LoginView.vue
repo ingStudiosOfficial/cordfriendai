@@ -175,7 +175,7 @@
             <div class="oauth-login-div">
                 <p>Login via an OAuth provider</p>
                 <div class="oauth-providers">
-                    <md-filled-tonal-button class="oauth-provider-button" disabled>
+                    <md-filled-tonal-button class="oauth-provider-button" :href="`${apiBaseUrl}/api/oauth2/google/`">
                         Continue with Google
                     </md-filled-tonal-button>
                     <md-filled-tonal-button class="oauth-provider-button" disabled>
