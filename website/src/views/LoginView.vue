@@ -178,7 +178,7 @@
                     <md-filled-tonal-button class="oauth-provider-button" :href="`${apiBaseUrl}/api/oauth2/google/`">
                         Continue with Google
                     </md-filled-tonal-button>
-                    <md-filled-tonal-button class="oauth-provider-button" disabled>
+                    <md-filled-tonal-button class="oauth-provider-button" :href="`${apiBaseUrl}/api/oauth2/discord/`">
                         Continue with Discord
                     </md-filled-tonal-button>
                 </div>

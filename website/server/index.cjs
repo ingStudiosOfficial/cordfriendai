@@ -23,7 +23,7 @@ const { validateUserInput } = require('./middleware/validateUserInput.cjs');
 
 // Import authentication
 const { hashPassword, authenticateToken } = require('./authentication/authentication.cjs');
-const { createGoogleStrategy } = require('./authentication/google_strategy.cjs');
+const { createGoogleStrategy, createDiscordStrategy } = require('./authentication/strategies.cjs');
 
 const app = express();
 
@@ -122,6 +122,7 @@ async function connectToMongodb() {
 function setupPassport() {
 	// Passport setup
 	passport.use(createGoogleStrategy(usersCollection, credsCollection));
+	passport.use(createDiscordStrategy(usersCollection, credsCollection));
 }
 
 connectToMongodb().then(() => {
@@ -486,6 +487,27 @@ connectToMongodb().then(() => {
 			session: false
 		}),
 		(req, res) => {
+			const token = req.user.token;
+
+			const DURATION_DAYS = 7;
+			const cookieAgeMs = DURATION_DAYS * 24 * 60 * 60 * 1000; 
+
+			res.status(200).cookie('auth_token', token, {
+				httpOnly: true,
+				secure: process.env.NODE_ENV === 'production',
+				sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+				maxAge: cookieAgeMs
+			}).redirect(`${process.env.CLIENT_URL}/dashboard`);
+		}
+	);
+
+	app.get('/api/oauth2/discord/', passport.authenticate('discord', { scope: ['identify', 'email'] }));
+
+	app.get('/api/oauth2/callback/discord/',
+		passport.authenticate('discord', {
+			failureRedirect: `${process.env.CLIENT_URL}/login`,
+			session: false
+		}), (req, res) => {
 			const token = req.user.token;
 
 			const DURATION_DAYS = 7;
