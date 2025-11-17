@@ -69,6 +69,15 @@ Paste the token in your ```bot/.env``` file.
 Generate a 256 bit key and a 128 bit IV for ```website/.env```.
 Generate another 256 bit key for ```bot/.env```.
 
+7. **Setup Google OAuth**
+Create a new project in [Google Cloud Console](https://console.cloud.google.com). Go to APIs & Services > OAuth Consent Screen > Clients and create a new Web Client. Set your callback and origin URLs. Get your Google client ID and client secret and add them to ```website/.env```. Set you Google callback URL in ```website/.env``` too.
+
+8. **Setup Discord OAuth**
+Go to the [Discord Developer Portal](https://discord.com/developers/applications) and navigate to your Discord Application. Go to the OAuth2 tab and get your client ID and client secret and add them to ```website/.env```. Set your Discord callback URL in ```website/.env``` too.
+
+9. **Add Session Secret**
+This step is required only if you intend on using session storage instead of JWTs. Create a new session secret in ```website/.env```.
+
 ### Running
 1. **Run the development build of the website**
 ```
