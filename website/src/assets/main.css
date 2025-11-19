@@ -10,7 +10,7 @@ body {
 	min-height: 100vh;
 	background-color: var(--md-sys-color-surface);
 	color: var(--md-sys-color-on-surface);
-	font-family: 'Google Sans', system-ui;
+	font-family: 'Google Sans Flex', system-ui;
 	word-wrap: break-word;
 }
 

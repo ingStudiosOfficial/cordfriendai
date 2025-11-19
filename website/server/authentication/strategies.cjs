@@ -27,20 +27,28 @@ function createGoogleStrategy(usersCollection, credsCollection) {
 
                 const userEmail = profile.emails[0].value;
 
-                const userDataToStore = {
-                    'email': userEmail,
-                    'password': null,
-                    'bots': [],
-                    'tokenVersion': 0
-                };
+                const userExists = await usersCollection.findOne({ email: userEmail });
 
-                const result = await usersCollection.insertOne(userDataToStore);
+                let userId;
 
-                if (!result.insertedId) {
-                    return cb(new Error('Error while inserting user.'));
+                if (!userExists) {
+                    const userDataToStore = {
+                        'email': userEmail,
+                        'password': null,
+                        'bots': [],
+                        'tokenVersion': 0
+                    };
+
+                    const result = await usersCollection.insertOne(userDataToStore);
+
+                    if (!result.insertedId) {
+                        return cb(new Error('Error while inserting user.'));
+                    }
+
+                    userId = result.insertedId;
+                } else {
+                    userId = userExists._id;
                 }
-
-                const userId = result.insertedId;
 
                 const credsResult = await credsCollection.insertOne({
                     userId: userId,
@@ -52,11 +60,21 @@ function createGoogleStrategy(usersCollection, credsCollection) {
                     return cb(new Error('Error while inserting credentials.'));
                 }
 
-                const payload = {
-                    id: userId,
-                    email: userDataToStore.email,
-                    tokenVersion: userDataToStore.tokenVersion
-                };
+                let payload;
+
+                if (!userExists) {
+                    payload = {
+                        id: userId,
+                        email: userDataToStore.email,
+                        tokenVersion: userDataToStore.tokenVersion
+                    };
+                } else {
+                    payload = {
+                        id: userExists._id,
+                        email: userExists.email,
+                        tokenVersion: userExists.tokenVersion
+                    };
+                }
 
                 const jwtSecretKey = process.env.JWT_SECRET_KEY;
                 
@@ -118,20 +136,28 @@ function createDiscordStrategy(usersCollection, credsCollection) {
 
                 const userEmail = profile.email;
 
-                const userDataToStore = {
-                    'email': userEmail,
-                    'password': null,
-                    'bots': [],
-                    'tokenVersion': 0
-                };
+                const userExists = await usersCollection.findOne({ email: userEmail });
 
-                const result = await usersCollection.insertOne(userDataToStore);
+                let userId;
 
-                if (!result.insertedId) {
-                    return cb(new Error('Error while inserting user.'));
+                if (!userExists) {
+                    const userDataToStore = {
+                        'email': userEmail,
+                        'password': null,
+                        'bots': [],
+                        'tokenVersion': 0
+                    };
+
+                    const result = await usersCollection.insertOne(userDataToStore);
+
+                    if (!result.insertedId) {
+                        return cb(new Error('Error while inserting user.'));
+                    }
+
+                    userId = result.insertedId;
+                } else {
+                    userId = userExists._id;
                 }
-
-                const userId = result.insertedId;
 
                 const credsResult = await credsCollection.insertOne({
                     userId: userId,
@@ -143,11 +169,21 @@ function createDiscordStrategy(usersCollection, credsCollection) {
                     return cb(new Error('Error while inserting credentials.'));
                 }
 
-                const payload = {
-                    id: userId,
-                    email: userDataToStore.email,
-                    tokenVersion: userDataToStore.tokenVersion
-                };
+                let payload;
+
+                if (!userExists) {
+                    payload = {
+                        id: userId,
+                        email: userDataToStore.email,
+                        tokenVersion: userDataToStore.tokenVersion
+                    };
+                } else {
+                    payload = {
+                        id: userExists._id,
+                        email: userExists.email,
+                        tokenVersion: userExists.tokenVersion
+                    };
+                }
 
                 const jwtSecretKey = process.env.JWT_SECRET_KEY;
                 
