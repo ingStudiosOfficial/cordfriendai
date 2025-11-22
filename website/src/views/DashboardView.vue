@@ -1,7 +1,7 @@
 <script setup>
     import { ref, onMounted, watch, onUnmounted } from 'vue';
-    import '@material/web/iconbutton/filled-tonal-icon-button.js';
-    import '@material/web/focus/md-focus-ring.js'
+    import '@material/web/fab/fab.js';
+    import '@material/web/focus/md-focus-ring.js';
     import '@material/web/icon/icon.js';
     import '@material/web/ripple/ripple.js';
 
@@ -134,9 +134,9 @@
         @close-account-dialog="closeAccountDialog()">
     </AccountDialog>
 
-    <md-filled-tonal-icon-button class="add-button" @click="showCreateBotDialog()">
-        <md-icon>add</md-icon>
-    </md-filled-tonal-icon-button>
+    <md-fab class="add-button" label="Create" @click="showCreateBotDialog()">
+        <md-icon slot="icon">add</md-icon>
+    </md-fab>
 </template>
 
 <style scoped>
@@ -196,7 +196,5 @@
         margin: 25px;
         bottom: 0;
         right: 0;
-        width: 50px;
-        height: 50px;
     }
 </style>
