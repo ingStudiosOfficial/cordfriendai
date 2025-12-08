@@ -35,7 +35,7 @@ Before development, please ensure you have the following installed:
 * [Go 1.25 or above](https://go.dev/doc/install) (Running the bot)
 * [Node.js](https://nodejs.org/download) (Running the website)
 
-## Setup
+### Setup
 1. **Clone the repository**
 ```
 git clone https://github.com/ingStudiosOfficial/cordfriendai.git
@@ -114,7 +114,7 @@ go build
 Read [CONTRIBUTING.md](./CONTRIBUTING.md) for more details.
 
 ## License
-Cordfriend AI is listed under the Apache 2.0 License.
+Cordfriend AI is licensed under the Apache 2.0 License.
 
 Read [LICENSE](./LICENSE) for more details.
 
