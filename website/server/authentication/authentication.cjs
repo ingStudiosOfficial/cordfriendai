@@ -32,7 +32,7 @@ function authenticateToken(collection) {
 
         jwt.verify(token, jwtSecretKey, async (err, decoded) => {
             if (err) {
-                return res.status(403).json({ message: 'Invalid or expired token.' });
+                return res.status(401).json({ message: 'Invalid or expired token.' });
             }
 
             console.log('User authenticated:', decoded);
@@ -54,8 +54,7 @@ function authenticateToken(collection) {
                 next();
             } catch (error) {
                 console.error('Error fetching user:', error);
-                res.status(500).json({ message: 'Internal server error.' });
-                return;
+                return res.status(500).json({ message: 'Internal server error.' });
             }
         });
     };
