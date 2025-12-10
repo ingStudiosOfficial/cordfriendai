@@ -8,6 +8,7 @@
   },
   "scripts": {
     "dev": "vite",
+    "dev-host": "vite --host",
     "build": "vite build",
     "preview": "vite preview",
     "start": "node server/index.cjs",

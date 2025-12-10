@@ -26,7 +26,7 @@
 	<header v-if="!$route.meta.hideHeader">
 		<div class="header-left-wrapper">
 			<img src="/cordfriend_svg.svg" class="header-logo" />
-			<h1>Cordfriend AI</h1>
+			<h1 class="cordfriend-text">Cordfriend AI</h1>
 		</div>
 		<div class="header-buttons">
 			<md-outlined-icon-button class="header-button" v-if="$route.meta.showAccountButton" @click="triggerOpenAccountPanel()">
@@ -46,5 +46,13 @@
 </template>
 
 <style scoped>
+@media (max-width: 768px) {
+	header {
+		width: 100vw;
+	}
 
+	.cordfriend-text {
+		display: none;
+	}
+}
 </style>

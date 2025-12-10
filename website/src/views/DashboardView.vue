@@ -7,7 +7,10 @@
 
     import fetchAllBots from '@/utilities/fetchAllBots';
     import fetchUserData from '@/utilities/fetchUserData';
+    import { vibrate } from '@/utilities/vibrate';
+
     import { useUiStore } from '../stores/ui';
+
     import BotDialog from '@/components/BotDialog.vue';
     import AccountDialog from '@/components/AccountDialog.vue';
 
@@ -25,6 +28,7 @@
 
     // Bot Dialog handlers
     function showCreateBotDialog() {
+        vibrate([10]);
         showAccountDialog.value = false;
         isEditingBot.value = false;
         botToDisplay.value = {};
@@ -32,6 +36,7 @@
     }
 
     function showEditBotDialog(bot) {
+        vibrate([10]);
         showAccountDialog.value = false;
         isEditingBot.value = true;
         botToDisplay.value = bot;
@@ -39,6 +44,7 @@
     }
 
     function closeBotDialog() {
+        vibrate([10]);
         botToDisplay.value = {};
         showBotDialog.value = false;
     }
@@ -63,12 +69,14 @@
 
     // Account Dialog handlers
     function openAccountDialog() {
+        vibrate([10]);
         showBotDialog.value = false;
         showAccountDialog.value = true;
         userAccount.value = fetchedUserAccount;
     }
 
     function closeAccountDialog() {
+        vibrate([10]);
         uiStore.resetAccountPanel();
         showAccountDialog.value = false;
         userAccount.value = null;
@@ -137,6 +145,9 @@
     <md-fab class="add-button" label="Create" @click="showCreateBotDialog()">
         <md-icon slot="icon">add</md-icon>
     </md-fab>
+    <md-fab class="mobile-add-button" size="large" @click="showCreateBotDialog()">
+        <md-icon slot="icon">add</md-icon>
+    </md-fab>
 </template>
 
 <style scoped>
@@ -196,5 +207,29 @@
         margin: 25px;
         bottom: 0;
         right: 0;
+    }
+
+    .mobile-add-button {
+        display: none;
+    }
+    
+    @media (max-width: 768px) {
+        .bot-cards {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .add-button {
+            display: none;
+        }
+
+        .mobile-add-button {
+            display: block;
+            position: fixed;
+            margin: 25px;
+            bottom: 0;
+            right: 0;
+        }
     }
 </style>

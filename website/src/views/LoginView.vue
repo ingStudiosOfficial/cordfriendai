@@ -13,6 +13,8 @@
     import '@material/web/iconbutton/filled-tonal-icon-button.js';
     import '@material/web/ripple/ripple.js';
 
+    import { vibrate } from '@/utilities/vibrate';
+
     const apiBaseUrl = import.meta.env.VITE_API_BASE_URL;
     console.log('API base URL:', apiBaseUrl);
 
@@ -29,6 +31,8 @@
 
     async function logUserIn() {
         console.log('Called logUserIn()');
+
+        vibrate([10]);
 
         // Clear messages
         hasError.value = false;
@@ -90,6 +94,8 @@
     }
 
     async function signUserUp() {
+        vibrate([10]);
+
         // Clear messages
         hasError.value = false;
         errorMessage.value = '';
@@ -142,6 +148,11 @@
             errorMessage.value = 'An unexpected error occurred, please try again later.';
         }
     }
+
+    function redirectToOAuthPage(pageHref) {
+        vibrate([10]);
+        document.location.href = pageHref;
+    }
 </script>
 
 <template>
@@ -175,10 +186,10 @@
             <div class="oauth-login-div">
                 <p>Login via an OAuth provider</p>
                 <div class="oauth-providers">
-                    <md-filled-tonal-button class="oauth-provider-button" :href="`${apiBaseUrl}/api/oauth2/google/`">
+                    <md-filled-tonal-button class="oauth-provider-button" @click="redirectToOAuthPage(`${apiBaseUrl}/api/oauth2/google/`)">
                         Continue with Google
                     </md-filled-tonal-button>
-                    <md-filled-tonal-button class="oauth-provider-button" :href="`${apiBaseUrl}/api/oauth2/discord/`">
+                    <md-filled-tonal-button class="oauth-provider-button" @click="redirectToOAuthPage(`${apiBaseUrl}/api/oauth2/discord/`)">
                         Continue with Discord
                     </md-filled-tonal-button>
                 </div>
@@ -334,5 +345,26 @@
         color: var(--md-sys-color-primary);
         text-decoration: underline;
         cursor: pointer;
+    }
+
+    @media (max-width: 768px) {
+        .content-wrapper {
+            grid-template-columns: 1fr;
+        }
+
+        .login-box {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: fit-content;
+            border-radius: 25px 25px 0 0;
+            background-color: var(--md-sys-color-primary-container);
+            color: var(--md-sys-color-on-primary-container);
+        }
+
+        .image-showcase {
+            display: none;
+        }
     }
 </style>

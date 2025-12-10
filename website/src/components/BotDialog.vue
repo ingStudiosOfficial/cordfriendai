@@ -10,6 +10,8 @@
     import '@material/web/ripple/ripple.js';
     import '@material/web/focus/md-focus-ring.js';
 
+    import { vibrate } from '@/utilities/vibrate';
+
     const props = defineProps({
         showBotDialog: Boolean,
         isEditingBot: Boolean,
@@ -67,6 +69,8 @@
     }
 
     async function createBot() {
+        vibrate([10]);
+
         const imageData = await uploadImage();
         if (imageData) {
             props.botToDisplay['image_id'] = imageData.fileId;
@@ -110,6 +114,8 @@
     }
 
     async function saveBot() {
+        vibrate([10]);
+
         if (pendingImageFile.value) {
             const imageData = await uploadImage();
             if (imageData) {
@@ -154,6 +160,8 @@
     }
 
     async function deleteBot() {
+        vibrate([10]);
+
         const botToDelete = JSON.stringify(props.botToDisplay);
         console.log('Deleting bot:', botToDelete);
 
@@ -187,6 +195,8 @@
     }
 
     async function deleteConv() {
+        vibrate([10]);
+
         const botToDelete = JSON.stringify(props.botToDisplay);
         console.log('Deleting bot:', botToDelete);
 
@@ -220,10 +230,13 @@
     }
 
     function openFilePicker() {
+        vibrate([10]);
+
         botProfilePicker.value.click();
     }
 
     function closeBotDialog() {
+        vibrate([10]);
         errorToDisplay.value = null;
         pendingImageFile.value = null;
         emit('closeBotDialog');
@@ -524,5 +537,17 @@
         border-width: 10px 0 10px 10px;
         border-style: solid;
         border-color: transparent transparent transparent var(--md-sys-color-primary-container);
+    }
+
+    @media (max-width: 768px) {
+        .bot-dialog {
+            width: 100%;
+            height: 100%;
+            border-radius: 0;
+        }
+
+        .dialog-settings-field, .pfp-input, .danger-zone, .conv-div {
+            width: 80%;
+        }
     }
 </style>

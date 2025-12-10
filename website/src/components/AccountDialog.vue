@@ -8,6 +8,8 @@
     import '@material/web/icon/icon.js';
     import '@material/web/iconbutton/icon-button.js';
 
+    import { vibrate } from '@/utilities/vibrate';
+
     const props = defineProps({
         showAccountDialog: Boolean,
         userAccount: Object
@@ -22,6 +24,8 @@
     const accountToEdit = ref(props.userAccount);
 
     async function editAccount() {
+        vibrate([10]);
+
         errorToDisplay.value = null;
 
         const dataToSend = JSON.stringify(accountToEdit.value);
@@ -59,6 +63,8 @@
     }
 
     async function deleteAccount() {
+        vibrate([10]);
+
         if (!confirm('Do you wish to delete your account and all your bots? This action cannot be undone.')) {
             console.log('User canceled deletion of account.');
             return;
@@ -93,6 +99,8 @@
     }
 
     function closeAccountDialog() {
+        vibrate([10]);
+
         errorToDisplay.value = null;
         showOldPassword.value = false;
         showNewPassword.value = false;
@@ -251,5 +259,17 @@
 
     .error-div {
         color: var(--md-sys-color-error);
+    }
+
+    @media (max-width: 768px) {
+        .account-dialog {
+            width: 100%;
+            height: 100%;
+            border-radius: 0;
+        }
+
+        .dialog-settings-field, .danger-zone {
+            width: 80%;
+        }
     }
 </style>

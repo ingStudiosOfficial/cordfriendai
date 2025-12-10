@@ -47,7 +47,7 @@
     }
 
     .cordfriend-title {
-        font-size: 80px;
+        font-size: 3em;
         color: var(--md-sys-color-primary);
     }
 
@@ -60,7 +60,7 @@
     }
 
     .hero-text {
-        font-size: 50px;
+        font-size: 2.5em;
     }
 
     .hero-emphasis {
@@ -72,11 +72,11 @@
 
     .section-title {
         color: var(--md-sys-color-primary);
-        font-size: 40px;
+        font-size: 2.5em;
     }
 
     .why-cordfriend {
-        font-size: 30px;
+        font-size: 2em;
         list-style-type: none;
     }
 
@@ -89,7 +89,7 @@
     }
 
     .section-para {
-        font-size: 30px;
+        font-size: 1.5em;
     }
 
     .get-started {
