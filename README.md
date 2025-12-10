@@ -50,7 +50,7 @@ cd ../bot
 ```
 
 3. **Setup MongoDB Atlas**
-Create a MongoDB Atlas database and cluster called ```cordfriendai```.
+Create a MongoDB Atlas database and cluster called ```cordfriendAI```.
 Get the Node.js driver connection string.
 Paste the MongoDB connection string in your ```website/.env``` and ```bot/.env``` files.
 
