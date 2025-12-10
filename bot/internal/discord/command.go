@@ -9,14 +9,24 @@ import (
 	"bot/internal/commands"
 )
 
-func HandleCommand(s *discordgo.Session, i *discordgo.InteractionCreate, db *mongo.Database) {
+type CommandParams struct {
+	Db *mongo.Database
+}
+
+func CommandHandler(db *mongo.Database) *CommandParams {
+	return &CommandParams{
+		Db: db,
+	}
+}
+
+func (r *CommandParams) HandleCommand(s *discordgo.Session, i *discordgo.InteractionCreate) {
 	if i.Type != discordgo.InteractionApplicationCommand {
 		return
 	}
 
 	switch i.ApplicationCommandData().Name {
 	case "load-name":
-		err := commands.UpdateBotNickname(s, i.GuildID, i, db)
+		err := commands.UpdateBotNickname(s, i.GuildID, i, r.Db)
 
 		if err != nil {
 			fmt.Println("Error while updating bot nickname:", err)

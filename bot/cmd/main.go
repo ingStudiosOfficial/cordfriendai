@@ -15,9 +15,13 @@ import (
 	"github.com/joho/godotenv"
 )
 
+var VERSION = "1.4.1"
+
 var dg *discordgo.Session
 
 func main() {
+	fmt.Println("Cordfriend AI [Version " + VERSION + "]")
+
 	err := godotenv.Load()
 	if err != nil {
 		log.Fatal("Error while loading .env file:", err)
@@ -65,8 +69,9 @@ func main() {
 	})
 
 	messageHandler := discord.MessageHandler(mongoClient.Database(databaseName))
+	commandHandler := discord.CommandHandler(mongoClient.Database(databaseName))
 
-	dg.AddHandler(discord.HandleCommand)
+	dg.AddHandler(commandHandler.HandleCommand)
 	dg.AddHandler(messageHandler.HandleMessageCreate)
 
 	dg.Identify.Intents = discordgo.IntentsGuildMessages | discordgo.IntentsMessageContent

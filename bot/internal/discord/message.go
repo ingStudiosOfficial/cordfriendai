@@ -11,17 +11,17 @@ import (
 	"go.mongodb.org/mongo-driver/v2/mongo"
 )
 
-type MessageCreateParams struct {
+type MessageParams struct {
 	Db *mongo.Database
 }
 
-func MessageHandler(db *mongo.Database) *MessageCreateParams {
-	return &MessageCreateParams{
+func MessageHandler(db *mongo.Database) *MessageParams {
+	return &MessageParams{
 		Db: db,
 	}
 }
 
-func (r *MessageCreateParams) HandleMessageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
+func (r *MessageParams) HandleMessageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 	fmt.Println("Message created, running checks.")
 
 	botRepository := mongodb.NewBotRepository(r.Db)
