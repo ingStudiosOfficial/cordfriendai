@@ -912,11 +912,49 @@ connectToMongodb().then(() => {
 		}
 	});
 
+	let clients = [];
+	let latestUptime = 0;
+
 	app.post('/api/uptime/', (req, res) => {
-		const uptime = req.body;
+		const body = req.body;
+
+		const uptime = body.uptime;
+		const pingSecret = body.secret;
+
+		if (!pingSecret || pingSecret !== process.env.PING_SECRET) {
+			console.error('Unauthorized ping.');
+			return res.status(401).json({
+				message: 'Unauthorized to access this route.',
+			});
+		}
+
 		console.log('Current uptime:', uptime);
+
+		latestUptime = uptime;
+
+		for (const client of clients) {
+			client.res.write(`data: ${JSON.stringify({ uptime: latestUptime })}\n\n`);
+		}
+
 		return res.status(200).json({
 			message: 'Successfully pinged server.',
 		});
 	});
+
+	app.get('/api/uptime-events/', (req, res)  => {
+		res.set({
+			'Content-Type': 'text/event-stream',
+			'Cache-Control': 'no-cache',
+			'Connection': 'keep-alive',
+		});
+
+		res.write(`data: ${JSON.stringify({ uptime: latestUptime })}\n\n`);
+
+		const client = { id: Date.now(), res };
+		clients.push(client);
+
+		req.on('close', () => {
+			clients = clients.filter(c => c.id !== client.id);
+		});
+	})
 });

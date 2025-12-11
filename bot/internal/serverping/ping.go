@@ -8,12 +8,13 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strconv"
 
 	"github.com/joho/godotenv"
 )
 
-func SendUptime(durationSinceStart string) {
-	fmt.Println("Attempting to ping server of uptime: " + durationSinceStart)
+func SendUptime(durationSinceStart int64) {
+	fmt.Println("Attempting to ping server of uptime: " + strconv.FormatInt(durationSinceStart, 10))
 
 	err := godotenv.Load()
 	if err != nil {
@@ -21,11 +22,13 @@ func SendUptime(durationSinceStart string) {
 	}
 
 	type UptimeReport struct {
-		Uptime string `json:"uptime"`
+		Uptime int64  `json:"uptime"`
+		Secret string `json:"secret"`
 	}
 
 	report := UptimeReport{
 		Uptime: durationSinceStart,
+		Secret: os.Getenv("PING_SECRET"),
 	}
 
 	jsonReport, err := json.Marshal(report)

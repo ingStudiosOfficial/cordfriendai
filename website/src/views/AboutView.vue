@@ -1,6 +1,28 @@
 <script setup>
+    import { onMounted, ref } from 'vue';
+
     import '@material/web/divider/divider.js';
     import '@material/web/button/filled-button.js';
+
+    import { formatUptime } from '@/utilities/uptime';
+
+    const currentUptime = ref('0s');
+
+    const apiBaseUrl = import.meta.env.VITE_API_BASE_URL;
+
+    function getCurrentUptime() {
+        const evt = new EventSource(`${apiBaseUrl}/api/uptime-events/`);
+
+        evt.onmessage = (e) => {
+            const data = JSON.parse(e.data);
+            console.log('Current uptime:', data.uptime);
+            currentUptime.value = formatUptime(data.uptime);
+        }
+    }
+
+    onMounted(() => {
+        getCurrentUptime();
+    });
 </script>
 
 <template>
@@ -17,6 +39,7 @@
             <li>Free</li>
             <li>Open-source</li>
             <li>Fast</li>
+            <li>Reliable</li>
         </ul>
         <md-divider></md-divider>
         <h1 class="section-title">Pricing</h1>
@@ -25,6 +48,9 @@
         <h1 class="section-title">Built with DiscordGo</h1>
         <p class="section-para">That's right - Cordfriend is built with the <span class="hero-emphasis">DiscordGo</span> framework in <span class="hero-emphasis">Golang</span>.</p>
         <p class="section-para">Why did I build it in Golang? Because all other bots are made in JavaScript and Python.</p>
+        <md-divider></md-divider>
+        <h1 class="section-title">Current Uptime</h1>
+        <p class="section-para">Cordfriend AI has an uptime of <span class="hero-emphasis">{{ currentUptime }}</span>.</p>
         <md-divider></md-divider>
         <h1 class="section-title">What Are You Waiting For?</h1>
         <p class="section-para">Sign up today by clicking the button below!</p>
