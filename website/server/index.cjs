@@ -911,4 +911,12 @@ connectToMongodb().then(() => {
 			}
 		}
 	});
+
+	app.post('/api/uptime/', (req, res) => {
+		const uptime = req.body;
+		console.log('Current uptime:', uptime);
+		return res.status(200).json({
+			message: 'Successfully pinged server.',
+		});
+	});
 });

@@ -42,12 +42,12 @@ func (r *APIRequest) RequestGenAi() string {
 
 	conversations, err := r.Repository.FetchConversations(r.M.GuildID)
 	if err != nil {
-		fmt.Print("Error while fetching conversations:", err)
+		fmt.Println("Error while fetching conversations:", err)
 		conversationsString = "No conversations stored in history yet."
 	} else {
 		conversationsByte, err := json.Marshal(conversations)
 		if err != nil {
-			fmt.Print("Error while converting conversations:", err)
+			fmt.Println("Error while converting conversations:", err)
 			conversationsString = "No conversations stored in history yet."
 		} else {
 			conversationsString = string(conversationsByte)

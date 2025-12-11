@@ -1,4 +1,4 @@
-package utils
+package decryption
 
 import (
 	"crypto/aes"

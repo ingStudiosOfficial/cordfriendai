@@ -7,20 +7,36 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
 	"bot/internal/discord"
+	"bot/internal/scheduler"
 	"bot/internal/storage/mongodb"
 
 	"github.com/bwmarrin/discordgo"
 	"github.com/joho/godotenv"
 )
 
-var VERSION = "1.4.1"
+const VERSION = "1.4.3"
+
+var STARTTIME time.Time
 
 var dg *discordgo.Session
 
 func main() {
 	fmt.Println("Cordfriend AI [Version " + VERSION + "]")
+
+	ctx, cancel := context.WithCancel(context.Background())
+
+	defer cancel()
+
+	sigChan := make(chan os.Signal, 1)
+
+	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
+
+	STARTTIME = time.Now()
+
+	scheduler.StartUptimePingScheduler(STARTTIME, ctx)
 
 	err := godotenv.Load()
 	if err != nil {
@@ -98,4 +114,11 @@ func main() {
 			log.Println("Error disconnecting from MongoDB:", err)
 		}
 	}()
+
+	select {
+	case <-sigChan:
+		fmt.Println("Server shutting down...")
+	case <-ctx.Done():
+		fmt.Println("Waiting for services to stop...")
+	}
 }

@@ -1,4 +1,4 @@
-package utils
+package strings
 
 func TruncateString(s string, maxLength int) string {
 	// Convert the string to a slice of runes to handle multi-byte characters correctly.

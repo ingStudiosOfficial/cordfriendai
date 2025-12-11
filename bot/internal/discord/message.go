@@ -5,7 +5,7 @@ import (
 
 	"bot/internal/platform/gemini"
 	"bot/internal/storage/mongodb"
-	"bot/internal/utils"
+	"bot/internal/strings"
 
 	"github.com/bwmarrin/discordgo"
 	"go.mongodb.org/mongo-driver/v2/mongo"
@@ -48,6 +48,6 @@ func (r *MessageParams) HandleMessageCreate(s *discordgo.Session, m *discordgo.M
 		response := geminiAPIClient.RequestGenAi()
 		fmt.Println("Returning response:", response)
 
-		s.ChannelMessageSend(m.ChannelID, utils.TruncateString(response, 2000))
+		s.ChannelMessageSend(m.ChannelID, strings.TruncateString(response, 2000))
 	}
 }

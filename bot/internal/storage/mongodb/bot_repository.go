@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"os"
 
+	"bot/internal/decryption"
 	"bot/internal/structs"
-	"bot/internal/utils"
 
 	"go.mongodb.org/mongo-driver/v2/bson"
 	"go.mongodb.org/mongo-driver/v2/mongo"
@@ -119,7 +119,7 @@ func (r *BotRepository) FetchApiKey(serverId string) (string, error) {
 	}
 
 	// Decrypt
-	plain, err := utils.DecryptAES256CBC(
+	plain, err := decryption.DecryptAES256CBC(
 		fetchedBot.GoogleAIAPI.EncryptedData,
 		fetchedBot.GoogleAIAPI.IV,
 		key,
