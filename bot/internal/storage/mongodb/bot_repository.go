@@ -39,7 +39,7 @@ func (r *BotRepository) FetchConversations(guildID string) ([]structs.Conversati
 	return settings.Conversations, nil
 }
 
-func (r *BotRepository) AddConversations(guildID string, userConv string, botConv string) error {
+func (r *BotRepository) AddConversations(guildID string, userConv structs.User, botConv string) error {
 	var conversation structs.Conversation = structs.Conversation{
 		User: userConv,
 		Bot:  botConv,

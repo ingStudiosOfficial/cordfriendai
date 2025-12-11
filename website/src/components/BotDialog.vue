@@ -307,7 +307,7 @@
             <h2 class="bot-dialog-subheader">Conversations</h2>
             <div class="conv-div" v-show="isEditingBot">
                 <div class="conv-group" v-if="botToDisplay.conversations && botToDisplay.conversations.length !== 0" v-for="conversation_group in botToDisplay.conversations.slice(0, 3)">
-                    <div v-if="conversation_group.user" class="message-bubble right">{{ truncateString(conversation_group.user, 200) }}</div>
+                    <div v-if="conversation_group.user" class="message-bubble right"><b>{{ conversation_group.user.name + ':' }}</b> {{ truncateString(conversation_group.user.message, 200) }}</div>
                     <div v-if="conversation_group.bot" class="message-bubble left">{{ truncateString(conversation_group.bot, 200) }}</div>
                 </div>
                 <p v-if="botToDisplay.conversations && botToDisplay.conversations.length === 0">No conversations yet.</p>
@@ -541,9 +541,9 @@
 
     @media (max-width: 768px) {
         .bot-dialog {
-            width: 100%;
-            height: 100%;
-            border-radius: 0;
+            width: 90%;
+            height: 90%;
+            border-radius: 25px;
         }
 
         .dialog-settings-field, .pfp-input, .danger-zone, .conv-div {

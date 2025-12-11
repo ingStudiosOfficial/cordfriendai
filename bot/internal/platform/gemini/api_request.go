@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	"bot/internal/storage/mongodb"
+	"bot/internal/structs"
 
 	"github.com/bwmarrin/discordgo"
 	"github.com/google/generative-ai-go/genai"
@@ -81,7 +82,7 @@ func (r *APIRequest) RequestGenAi() string {
 		return "Error creating new Gemini client."
 	}
 
-	var promptToSend = "Conversation history: " + conversationsString + "System message: " + systemInstructions + "User '" + sentUser + "' sent the message: " + r.M.Content
+	var promptToSend = "Conversation history: " + conversationsString + " System message: " + systemInstructions + " User '" + sentUser + "' sent the message: " + r.M.Content
 	fmt.Println("Sending prompt:", promptToSend)
 
 	resp, err := client.GenerativeModel("gemini-2.5-flash").GenerateContent(
@@ -92,6 +93,10 @@ func (r *APIRequest) RequestGenAi() string {
 		fmt.Println("Error while generating content:", err)
 		return "There was an error while generating your content. If this persists, try deleting your bots conversations"
 	}
+
+	var messageSent structs.User
+	messageSent.Name = r.M.Author.DisplayName()
+	messageSent.Message = r.M.Content
 
 	var response string = ""
 
@@ -104,7 +109,7 @@ func (r *APIRequest) RequestGenAi() string {
 	}
 
 	if response != "" {
-		r.Repository.AddConversations(r.M.GuildID, r.M.Content, response)
+		r.Repository.AddConversations(r.M.GuildID, messageSent, response)
 	}
 
 	return "<@" + sentUserId + "> " + response

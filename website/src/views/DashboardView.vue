@@ -13,6 +13,7 @@
 
     import BotDialog from '@/components/BotDialog.vue';
     import AccountDialog from '@/components/AccountDialog.vue';
+    import LoaderContainer from '@/components/LoaderContainer.vue';
 
     const uiStore = useUiStore();
     const apiBaseUrl = import.meta.env.VITE_API_BASE_URL;
@@ -115,7 +116,7 @@
 </script>
 
 <template>
-    <div class="content-wrapper">
+    <div class="content-wrapper" v-if="serverBots">
         <div class="bot-cards">
             <button class="bot-card" v-for="serverBot in serverBots" :key="serverBot._id" @click="showEditBotDialog(serverBot)">
                 <md-ripple></md-ripple>
@@ -126,28 +127,30 @@
                 <h1>{{ serverBot.name }}</h1>
             </button>
         </div>
+        
+        <BotDialog 
+            :show-bot-dialog="showBotDialog" 
+            :is-editing-bot="isEditingBot" 
+            :bot-to-display="botToDisplay" 
+            @close-bot-dialog="closeBotDialog()"
+            @refresh-bots="refreshBots()">
+        </BotDialog>
+
+        <AccountDialog
+            :show-account-dialog="showAccountDialog"
+            :user-account="userAccount"
+            @close-account-dialog="closeAccountDialog()">
+        </AccountDialog>
+
+        <md-fab class="add-button" label="Create" @click="showCreateBotDialog()">
+            <md-icon slot="icon">add</md-icon>
+        </md-fab>
+        <md-fab class="mobile-add-button" size="large" @click="showCreateBotDialog()">
+            <md-icon slot="icon">add</md-icon>
+        </md-fab>
     </div>
 
-    <BotDialog 
-        :show-bot-dialog="showBotDialog" 
-        :is-editing-bot="isEditingBot" 
-        :bot-to-display="botToDisplay" 
-        @close-bot-dialog="closeBotDialog()"
-        @refresh-bots="refreshBots()">
-    </BotDialog>
-
-    <AccountDialog
-        :show-account-dialog="showAccountDialog"
-        :user-account="userAccount"
-        @close-account-dialog="closeAccountDialog()">
-    </AccountDialog>
-
-    <md-fab class="add-button" label="Create" @click="showCreateBotDialog()">
-        <md-icon slot="icon">add</md-icon>
-    </md-fab>
-    <md-fab class="mobile-add-button" size="large" @click="showCreateBotDialog()">
-        <md-icon slot="icon">add</md-icon>
-    </md-fab>
+    <LoaderContainer v-else class="loader-container" loader-color="var(--md-sys-color-primary)" loading-text="Hang on while we load your bots..."></LoaderContainer>
 </template>
 
 <style scoped>
@@ -211,6 +214,13 @@
 
     .mobile-add-button {
         display: none;
+    }
+
+    .loader-container {
+        position: relative;
+        top: 50vh;
+        left: 50vw;
+        transform: translate(-50%, -50%);
     }
     
     @media (max-width: 768px) {

@@ -263,9 +263,9 @@
 
     @media (max-width: 768px) {
         .account-dialog {
-            width: 100%;
-            height: 100%;
-            border-radius: 0;
+            width: 90%;
+            height: 90%;
+            border-radius: 25px;
         }
 
         .dialog-settings-field, .danger-zone {
