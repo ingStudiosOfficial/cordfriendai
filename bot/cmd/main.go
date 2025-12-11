@@ -17,7 +17,7 @@ import (
 	"github.com/joho/godotenv"
 )
 
-const VERSION = "1.4.3"
+const VERSION = "1.4.4"
 
 var STARTTIME time.Time
 
@@ -117,7 +117,7 @@ func main() {
 
 	select {
 	case <-sigChan:
-		fmt.Println("Server shutting down...")
+		fmt.Println("Bot shutting down...")
 	case <-ctx.Done():
 		fmt.Println("Waiting for services to stop...")
 	}

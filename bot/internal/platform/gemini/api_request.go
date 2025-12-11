@@ -91,7 +91,7 @@ func (r *APIRequest) RequestGenAi() string {
 	)
 	if err != nil {
 		fmt.Println("Error while generating content:", err)
-		return "There was an error while generating your content. If this persists, try deleting your bots conversations"
+		return "There was an error while generating your content. If this persists, try deleting your bots conversations or checking your rate limits."
 	}
 
 	var messageSent structs.User
