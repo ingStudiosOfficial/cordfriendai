@@ -5,12 +5,12 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"bot/internal/platform/gemini/tools"
 	"bot/internal/storage/mongodb"
 	"bot/internal/structs"
 
 	"github.com/bwmarrin/discordgo"
-	"github.com/google/generative-ai-go/genai"
-	"google.golang.org/api/option"
+	"google.golang.org/genai"
 )
 
 type APIRequest struct {
@@ -62,9 +62,9 @@ func (r *APIRequest) RequestGenAi() string {
 		fmt.Println("Error while fetching bot persona:", err)
 	}
 	if fetchedInstructions == "" {
-		systemInstructions = "You are a helpful Discord bot. Please be as concise as possible - but still give helpful information."
+		systemInstructions = "System defined instructions: 'Do not answer in text if you need to use a tool/function call, instead call the function immediately without any text response as functionCall[function] (e.g. functionCall[{getTime map[location_iana:Asia/Singapore]}]).'"
 	} else {
-		systemInstructions = fetchedInstructions
+		systemInstructions = "User defined instructions: '" + fetchedInstructions + "' System defined instructions: 'Do not answer in text if you need to use a tool/function call, instead call the function immediately without any text response as functionCall[function] (e.g. functionCall[{getTime map[location_iana:Asia/Singapore]}]).'"
 	}
 
 	var sentUser = r.M.Author.DisplayName()
@@ -75,20 +75,61 @@ func (r *APIRequest) RequestGenAi() string {
 
 	ctx := context.Background()
 
-	client, err := genai.NewClient(ctx, option.WithAPIKey(apiKey))
+	client, err := genai.NewClient(ctx, &genai.ClientConfig{
+		APIKey:  apiKey,
+		Backend: genai.BackendGeminiAPI,
+	})
 
 	if err != nil {
 		fmt.Println("Error creating new Gemini client:", err)
 		return "Error creating new Gemini client."
 	}
 
-	var promptToSend = "Conversation history: " + conversationsString + " System message: " + systemInstructions + " User '" + sentUser + "' sent the message: " + r.M.Content
+	var promptToSend = "Conversation history: '" + conversationsString + "' System message: '" + systemInstructions + "' User '" + sentUser + "' sent the message: '" + r.M.Content + "'"
 	fmt.Println("Sending prompt:", promptToSend)
 
-	resp, err := client.GenerativeModel("gemini-2.5-flash").GenerateContent(
+	config := &genai.GenerateContentConfig{
+		Tools: []*genai.Tool{
+			{FunctionDeclarations: []*genai.FunctionDeclaration{tools.TimeTool}},
+		},
+	}
+
+	contents := []*genai.Content{
+		{
+			Parts: []*genai.Part{{Text: promptToSend}},
+		},
+	}
+
+	resp, err := client.Models.GenerateContent(
 		ctx,
-		genai.Text(promptToSend),
+		"gemini-2.5-flash",
+		contents,
+		config,
 	)
+	if err != nil {
+		fmt.Println("Error while generating content:", err)
+		return "There was an error while generating your content. If this persists, try deleting your bots conversations or checking your rate limits."
+	}
+
+	functionCalls := resp.FunctionCalls()
+	if len(functionCalls) > 0 {
+		for _, fc := range functionCalls {
+			if fc.Name == "getTime" {
+				time := tools.GetTime(fc.Args["location_iana"].(string)).String()
+
+				contents = append(contents, resp.Candidates[0].Content)
+				contents = append(contents, &genai.Content{
+					Parts: []*genai.Part{
+						genai.NewPartFromFunctionResponse(fc.Name, map[string]any{
+							"time": time,
+						}),
+					},
+				})
+			}
+		}
+	}
+
+	finalResp, err := client.Models.GenerateContent(ctx, "gemini-2.5-flash", contents, config)
 	if err != nil {
 		fmt.Println("Error while generating content:", err)
 		return "There was an error while generating your content. If this persists, try deleting your bots conversations or checking your rate limits."
@@ -98,15 +139,7 @@ func (r *APIRequest) RequestGenAi() string {
 	messageSent.Name = r.M.Author.DisplayName()
 	messageSent.Message = r.M.Content
 
-	var response string = ""
-
-	for _, cand := range resp.Candidates {
-		if cand.Content != nil {
-			for _, part := range cand.Content.Parts {
-				response += fmt.Sprintf("%v", part)
-			}
-		}
-	}
+	var response string = finalResp.Text()
 
 	if response != "" {
 		r.Repository.AddConversations(r.M.GuildID, messageSent, response)
