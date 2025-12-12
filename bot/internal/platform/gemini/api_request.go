@@ -62,9 +62,9 @@ func (r *APIRequest) RequestGenAi() string {
 		fmt.Println("Error while fetching bot persona:", err)
 	}
 	if fetchedInstructions == "" {
-		systemInstructions = "System defined instructions: 'Do not answer in text if you need to use a tool/function call, instead call the function immediately without any text response as functionCall[function] (e.g. functionCall[{getTime map[location_iana:Asia/Singapore]}]).'"
+		systemInstructions = ""
 	} else {
-		systemInstructions = "User defined instructions: '" + fetchedInstructions + "' System defined instructions: 'Do not answer in text if you need to use a tool/function call, instead call the function immediately without any text response as functionCall[function] (e.g. functionCall[{getTime map[location_iana:Asia/Singapore]}]).'"
+		systemInstructions = "User defined instructions: '" + fetchedInstructions + "'"
 	}
 
 	var sentUser = r.M.Author.DisplayName()
