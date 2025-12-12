@@ -17,7 +17,7 @@ import (
 	"github.com/joho/godotenv"
 )
 
-const VERSION = "1.5.1"
+const VERSION = "1.5.2"
 
 var STARTTIME time.Time
 
