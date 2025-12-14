@@ -90,7 +90,7 @@ func (r *APIRequest) RequestGenAi() string {
 
 	config := &genai.GenerateContentConfig{
 		Tools: []*genai.Tool{
-			{FunctionDeclarations: []*genai.FunctionDeclaration{tools.TimeTool}},
+			{FunctionDeclarations: []*genai.FunctionDeclaration{tools.TimeTool, tools.WeatherTool}},
 		},
 	}
 
@@ -114,7 +114,8 @@ func (r *APIRequest) RequestGenAi() string {
 	functionCalls := resp.FunctionCalls()
 	if len(functionCalls) > 0 {
 		for _, fc := range functionCalls {
-			if fc.Name == "getTime" {
+			switch fc.Name {
+			case "getTime":
 				time := tools.GetTime(fc.Args["location_iana"].(string)).String()
 
 				contents = append(contents, resp.Candidates[0].Content)
@@ -122,6 +123,27 @@ func (r *APIRequest) RequestGenAi() string {
 					Parts: []*genai.Part{
 						genai.NewPartFromFunctionResponse(fc.Name, map[string]any{
 							"time": time,
+						}),
+					},
+				})
+			case "getWeather":
+				apiKey, err := r.Repository.FetchWeatherApiKey(r.M.GuildID)
+				if err != nil {
+					fmt.Println("Error while fetching weather API key:", err)
+					return "There was an error while fetching the weather. Please check whether your API key is valid and your rate limits."
+				}
+
+				weather, err := tools.GetWeather(apiKey, fc.Args["location"].(string))
+				if err != nil {
+					fmt.Println("Error while fetching weather data:", err)
+					return "There was an error while fetching the weather. Please check whether your API key is valid and your rate limits."
+				}
+
+				contents = append(contents, resp.Candidates[0].Content)
+				contents = append(contents, &genai.Content{
+					Parts: []*genai.Part{
+						genai.NewPartFromFunctionResponse(fc.Name, map[string]any{
+							"weather": weather,
 						}),
 					},
 				})

@@ -11,11 +11,12 @@ type Conversation struct {
 }
 
 type Bot struct {
-	Name          string         `bson:"name"`
-	Persona       string         `bson:"persona"`
-	ServerID      string         `bson:"server_id"`
-	UserID        string         `bson:"user_id"`
-	GoogleAIAPI   EncryptedAPI   `bson:"google_ai_api"`
-	Image         string         `bson:"image_id"`
-	Conversations []Conversation `bson:"conversations"`
+	Name              string         `bson:"name"`
+	Persona           string         `bson:"persona"`
+	ServerID          string         `bson:"server_id"`
+	UserID            string         `bson:"user_id"`
+	GoogleAIAPI       EncryptedAPI   `bson:"google_ai_api"`
+	OpenWeatherMapAPI EncryptedAPI   `bson:"openweathermap_api"`
+	Image             string         `bson:"image_id"`
+	Conversations     []Conversation `bson:"conversations"`
 }

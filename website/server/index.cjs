@@ -548,6 +548,7 @@ connectToMongodb().then(() => {
 			'server_id': botData.server_id,
 			'user_id': botData.user_id,
 			'google_ai_api': encryptApiKey(botData.google_ai_api),
+			'openweathermap_api': encryptApiKey(botData.openweathermap_api),
 			'image_id': botData.image_id,
 			'image_filename': botData.image_filename
 		};
@@ -629,6 +630,9 @@ connectToMongodb().then(() => {
 					// Decrypt the API key
 					fetchedBot.google_ai_api = decryptApiKey(fetchedBot.google_ai_api);
 
+					// Decrypt the weather API key
+					fetchedBot.openweathermap_api = decryptApiKey(fetchedBot.openweathermap_api);
+
 					console.log('Fetched bot:', fetchedBot);
 					return fetchedBot;
 				})
@@ -671,6 +675,9 @@ connectToMongodb().then(() => {
 			// Decrypt the API key
 			fetchedBot.google_ai_api = decryptApiKey(fetchedBot.google_ai_api);
 
+			// Decrypt the weather API key
+			fetchedBot.openweathermap_api = decryptApiKey(fetchedBot.openweathermap_api);
+
 			console.log('Fetched bot:', fetchedBot);
 
 			if (!fetchedBot) {
@@ -696,6 +703,9 @@ connectToMongodb().then(() => {
 
 		// Encrypt API key
 		botData.google_ai_api = encryptApiKey(botData.google_ai_api);
+
+		// Encrypt weather API key
+		botData.openweathermap_api = encryptApiKey(botData.openweathermap_api);
 
 		if (!botData) {
 			return sendErrorResponse(res, 400, 'No bot data provided.');

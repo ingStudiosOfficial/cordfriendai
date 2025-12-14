@@ -108,9 +108,8 @@ func (r *BotRepository) FetchApiKey(serverId string) (string, error) {
 		return "", fmt.Errorf("mongo find error: %w", err)
 	}
 
-	// AES key from env (must be 32 bytes for AES-256)
 	keyHex := os.Getenv("CRYPTO_SECRET_KEY")
-	key, err := hex.DecodeString(keyHex) // decode hex -> raw bytes
+	key, err := hex.DecodeString(keyHex)
 	if err != nil {
 		return "", fmt.Errorf("invalid AES key hex: %w", err)
 	}
@@ -118,7 +117,6 @@ func (r *BotRepository) FetchApiKey(serverId string) (string, error) {
 		return "", fmt.Errorf("AES key must be 32 bytes, got %d", len(key))
 	}
 
-	// Decrypt
 	plain, err := decryption.DecryptAES256CBC(
 		fetchedBot.GoogleAIAPI.EncryptedData,
 		fetchedBot.GoogleAIAPI.IV,
@@ -126,6 +124,39 @@ func (r *BotRepository) FetchApiKey(serverId string) (string, error) {
 	)
 	if err != nil {
 		return "", fmt.Errorf("failed to decrypt Google AI API key: %w", err)
+	}
+
+	return plain, nil
+}
+
+func (r *BotRepository) FetchWeatherApiKey(serverId string) (string, error) {
+	var fetchedBot structs.Bot
+
+	filter := bson.M{"server_id": serverId}
+	err := r.collection.FindOne(context.TODO(), filter).Decode(&fetchedBot)
+	if err != nil {
+		if err == mongo.ErrNoDocuments {
+			return "", fmt.Errorf("no document found for guild %s", serverId)
+		}
+		return "", fmt.Errorf("mongo find error: %w", err)
+	}
+
+	keyHex := os.Getenv("CRYPTO_SECRET_KEY")
+	key, err := hex.DecodeString(keyHex)
+	if err != nil {
+		return "", fmt.Errorf("invalid AES key hex: %w", err)
+	}
+	if len(key) != 32 {
+		return "", fmt.Errorf("AES key must be 32 bytes, got %d", len(key))
+	}
+
+	plain, err := decryption.DecryptAES256CBC(
+		fetchedBot.OpenWeatherMapAPI.EncryptedData,
+		fetchedBot.OpenWeatherMapAPI.IV,
+		key,
+	)
+	if err != nil {
+		return "", fmt.Errorf("failed to decrypt OpenWeatherMap API key: %w", err)
 	}
 
 	return plain, nil

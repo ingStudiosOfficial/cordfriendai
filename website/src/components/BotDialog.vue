@@ -22,6 +22,7 @@
 
     const apiBaseUrl = import.meta.env.VITE_API_BASE_URL;
     const showApi = ref(false);
+    const showWeatherApi = ref(false);
     const pendingImageFile = ref(null);
     const botProfilePicker = ref(null);
     const errorToDisplay = ref(null);
@@ -308,7 +309,7 @@
             <div class="conv-div" v-show="isEditingBot">
                 <div class="conv-group" v-if="botToDisplay.conversations && botToDisplay.conversations.length !== 0" v-for="conversation_group in botToDisplay.conversations.slice(0, 3)">
                     <div v-if="conversation_group.user" class="message-bubble right"><b>{{ conversation_group.user.name + ':' }}</b> {{ truncateString(conversation_group.user.message, 200) }}</div>
-                    <div v-if="conversation_group.bot" class="message-bubble left">{{ truncateString(conversation_group.bot, 200) }}</div>
+                    <div v-if="conversation_group.bot" class="message-bubble left"><b>{{ botToDisplay.name }}:</b> {{ truncateString(conversation_group.bot, 200) }}</div>
                 </div>
                 <p v-if="botToDisplay.conversations && botToDisplay.conversations.length === 0">No conversations yet.</p>
             </div>
@@ -340,6 +341,20 @@
                 supporting-text="Your Google AI API key." 
                 :type="showApi ? 'text' : 'password'">
                 <md-icon-button toggle slot="trailing-icon" @click="showApi = !showApi" type="button">
+                    <md-icon>visibility</md-icon>
+                    <md-icon slot="selected">visibility_off</md-icon>
+                </md-icon-button>
+            </md-outlined-text-field>
+            <h2 class="bot-dialog-subheader">OpenWeatherMap</h2>
+            <md-outlined-text-field 
+                class="dialog-settings-field" 
+                v-model="botToDisplay.openweathermap_api" 
+                label="OpenWeatherMap API key" 
+                required 
+                no-asterisk="true" 
+                supporting-text="Your OpenWeatherMap API key." 
+                :type="showWeatherApi ? 'text' : 'password'">
+                <md-icon-button toggle slot="trailing-icon" @click="showWeatherApi = !showWeatherApi" type="button">
                     <md-icon>visibility</md-icon>
                     <md-icon slot="selected">visibility_off</md-icon>
                 </md-icon-button>
