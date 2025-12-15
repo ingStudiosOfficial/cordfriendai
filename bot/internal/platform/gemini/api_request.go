@@ -90,7 +90,7 @@ func (r *APIRequest) RequestGenAi() string {
 
 	config := &genai.GenerateContentConfig{
 		Tools: []*genai.Tool{
-			{FunctionDeclarations: []*genai.FunctionDeclaration{tools.TimeTool, tools.WeatherTool}},
+			{FunctionDeclarations: []*genai.FunctionDeclaration{tools.TimeTool, tools.WeatherTool, tools.SearchTool}},
 		},
 	}
 
@@ -144,6 +144,27 @@ func (r *APIRequest) RequestGenAi() string {
 					Parts: []*genai.Part{
 						genai.NewPartFromFunctionResponse(fc.Name, map[string]any{
 							"weather": weather,
+						}),
+					},
+				})
+			case "vyntrSearch":
+				apiKey, err := r.Repository.FetchVyntrApiKey(r.M.GuildID)
+				if err != nil {
+					fmt.Println("Error while fetching Vyntr API key:", err)
+					return "There was an error while searching with Vyntr. Please check whether your API key is valid and your rate limits."
+				}
+
+				results, err := tools.VyntrSearch(apiKey, fc.Args["query"].(string))
+				if err != nil {
+					fmt.Println("Error while searching with Vyntr:", err)
+					return "There was an error while searching with Vyntr. Please check whether your API key is valid and your rate limits."
+				}
+
+				contents = append(contents, resp.Candidates[0].Content)
+				contents = append(contents, &genai.Content{
+					Parts: []*genai.Part{
+						genai.NewPartFromFunctionResponse(fc.Name, map[string]any{
+							"results": results,
 						}),
 					},
 				})

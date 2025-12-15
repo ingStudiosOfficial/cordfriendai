@@ -17,6 +17,7 @@ type Bot struct {
 	UserID            string         `bson:"user_id"`
 	GoogleAIAPI       EncryptedAPI   `bson:"google_ai_api"`
 	OpenWeatherMapAPI EncryptedAPI   `bson:"openweathermap_api"`
+	VyntrAPI          EncryptedAPI   `bson:"vyntr_api"`
 	Image             string         `bson:"image_id"`
 	Conversations     []Conversation `bson:"conversations"`
 }

@@ -549,6 +549,8 @@ connectToMongodb().then(() => {
 			'user_id': botData.user_id,
 			'google_ai_api': encryptApiKey(botData.google_ai_api),
 			'openweathermap_api': encryptApiKey(botData.openweathermap_api),
+			'vyntr_api': encryptApiKey(botData.vyntr_api),
+			'vyntr_api': encryptApiKey(botData.vyntr_api),
 			'image_id': botData.image_id,
 			'image_filename': botData.image_filename
 		};
@@ -633,6 +635,9 @@ connectToMongodb().then(() => {
 					// Decrypt the weather API key
 					fetchedBot.openweathermap_api = decryptApiKey(fetchedBot.openweathermap_api);
 
+					// Decrypt the Vyntr API key
+					fetchedBot.vyntr_api = decryptApiKey(fetchedBot.vyntr_api);
+
 					console.log('Fetched bot:', fetchedBot);
 					return fetchedBot;
 				})
@@ -678,6 +683,9 @@ connectToMongodb().then(() => {
 			// Decrypt the weather API key
 			fetchedBot.openweathermap_api = decryptApiKey(fetchedBot.openweathermap_api);
 
+			// Decrypt the Vyntr API key
+			fetchedBot.vyntr_api = decryptApiKey(fetchedBot.vyntr_api);
+
 			console.log('Fetched bot:', fetchedBot);
 
 			if (!fetchedBot) {
@@ -701,11 +709,14 @@ connectToMongodb().then(() => {
 		const botData = req.body;
 		console.log('Bot data:', botData);
 
-		// Encrypt API key
+		// Encrypt the API key
 		botData.google_ai_api = encryptApiKey(botData.google_ai_api);
 
-		// Encrypt weather API key
+		// Encrypt the weather API key
 		botData.openweathermap_api = encryptApiKey(botData.openweathermap_api);
+
+		// Encrypt the Vyntr API key
+		botData.vyntr_api = encryptApiKey(botData.vyntr_api);
 
 		if (!botData) {
 			return sendErrorResponse(res, 400, 'No bot data provided.');

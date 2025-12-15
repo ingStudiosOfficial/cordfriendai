@@ -23,6 +23,7 @@
     const apiBaseUrl = import.meta.env.VITE_API_BASE_URL;
     const showApi = ref(false);
     const showWeatherApi = ref(false);
+    const showVyntrApi = ref(false);
     const pendingImageFile = ref(null);
     const botProfilePicker = ref(null);
     const errorToDisplay = ref(null);
@@ -355,6 +356,20 @@
                 supporting-text="Your OpenWeatherMap API key." 
                 :type="showWeatherApi ? 'text' : 'password'">
                 <md-icon-button toggle slot="trailing-icon" @click="showWeatherApi = !showWeatherApi" type="button">
+                    <md-icon>visibility</md-icon>
+                    <md-icon slot="selected">visibility_off</md-icon>
+                </md-icon-button>
+            </md-outlined-text-field>
+            <h2 class="bot-dialog-subheader">Vyntr Search</h2>
+            <md-outlined-text-field 
+                class="dialog-settings-field" 
+                v-model="botToDisplay.vyntr_api" 
+                label="Vyntr Search API key" 
+                required 
+                no-asterisk="true" 
+                supporting-text="Your Vyntr Search API key." 
+                :type="showVyntrApi ? 'text' : 'password'">
+                <md-icon-button toggle slot="trailing-icon" @click="showVyntrApi = !showVyntrApi" type="button">
                     <md-icon>visibility</md-icon>
                     <md-icon slot="selected">visibility_off</md-icon>
                 </md-icon-button>
