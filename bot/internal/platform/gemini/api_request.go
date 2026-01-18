@@ -168,6 +168,9 @@ func (r *APIRequest) RequestGenAi() string {
 						}),
 					},
 				})
+			default:
+				fmt.Println("Unsupported tool.")
+				return "Unsupported tool called. Please try again."
 			}
 		}
 	}

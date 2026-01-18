@@ -21,6 +21,9 @@ Cordfriend AI is a free, open-source AI Discord bot, similar to Character AI or 
 * 😃 Customize your bots with custom names
 * ❇️ Uses Google Gemini API
 * ⚡ Built in Go - blazingly fast
+* 🌥️ Fetches weather data from multiple locations
+* 🕔 Fetches time from multiple timezones
+* 🔍 Searches the web using Vyntr
 
 <img src="./.github/assets/promo1.png" />
 <br />
