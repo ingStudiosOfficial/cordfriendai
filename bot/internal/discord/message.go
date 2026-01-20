@@ -43,6 +43,13 @@ func (r *MessageParams) HandleMessageCreate(s *discordgo.Session, m *discordgo.M
 	}
 
 	if mentioned {
+		err := s.ChannelTyping(m.ChannelID)
+		if err != nil {
+			fmt.Println("Failed to add typing indicator:", err)
+			s.ChannelMessageSend(m.ChannelID, strings.TruncateString("Failed to respond.", 2000))
+			return
+		}
+
 		fmt.Println("Bot mentioned, responding.")
 
 		response := geminiAPIClient.RequestGenAi()
