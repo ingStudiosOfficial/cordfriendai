@@ -86,7 +86,7 @@ func GenerateNeko(s *discordgo.Session, i *discordgo.InteractionCreate) error {
 			Reader: resp.Body,
 		})
 
-		embedMessage := fmt.Sprintf("Fetched from [nekos.best](https://nekos.best). View the original image [here](%v). [Artist](%v): %v", res[idx].Source_url, res[idx].Artist_href, res[idx].Artist_name)
+		embedMessage := fmt.Sprintf("Fetched from [nekos.best](https://nekos.best). View the original image [here](%v). Artist: [%v](%v)", res[idx].Source_url, res[idx].Artist_name, res[idx].Artist_href)
 
 		embeds = append(embeds, &discordgo.MessageEmbed{
 			Title:       imageType,

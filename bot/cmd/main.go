@@ -118,8 +118,6 @@ func main() {
 
 		for i, v := range commands {
 			cmd, err := s.ApplicationCommandCreate(s.State.User.ID, "", v)
-			// for dev only
-			s.ApplicationCommandCreate(s.State.User.ID, "1164025238883946537", commands[i])
 			if err != nil {
 				log.Panicf("Cannot create '%v' command: %v", v.Name, err)
 			}
