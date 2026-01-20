@@ -1,6 +1,7 @@
 package commands
 
 import (
+	"bot/internal/response"
 	"bot/internal/storage/mongodb"
 	"fmt"
 
@@ -9,6 +10,11 @@ import (
 )
 
 func UpdateBotNickname(s *discordgo.Session, guildID string, i *discordgo.InteractionCreate, db *mongo.Database) error {
+	err := response.DeferResponse(s, i, "Please wait while we update the nickname...")
+	if err != nil {
+		return err
+	}
+
 	fmt.Println("Update nickname command called.")
 
 	botRepository := mongodb.NewBotRepository(db)
@@ -28,11 +34,10 @@ func UpdateBotNickname(s *discordgo.Session, guildID string, i *discordgo.Intera
 		return fmt.Errorf("failed to set nickname: %w", err)
 	}
 
-	err = s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
-		Type: discordgo.InteractionResponseChannelMessageWithSource,
-		Data: &discordgo.InteractionResponseData{
-			Content: "Nickname updated successfully!",
-		},
+	responseMessage := "Nickname updated successfully!"
+
+	_, err = s.InteractionResponseEdit(i.Interaction, &discordgo.WebhookEdit{
+		Content: &responseMessage,
 	})
 	if err != nil {
 		fmt.Println("Failed to respond to interaction:", err)

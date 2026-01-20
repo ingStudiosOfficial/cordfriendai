@@ -30,6 +30,20 @@ func (r *CommandParams) HandleCommand(s *discordgo.Session, i *discordgo.Interac
 
 		if err != nil {
 			fmt.Println("Error while updating bot nickname:", err)
+			errorMessage := fmt.Sprintf("Error while updating bot nickname: %v", err)
+			s.InteractionResponseEdit(i.Interaction, &discordgo.WebhookEdit{
+				Content: &errorMessage,
+			})
+		}
+	case "fetch-neko":
+		err := commands.GenerateNeko(s, i)
+
+		if err != nil {
+			fmt.Println("Error while fetching neko:", err)
+			errorMessage := fmt.Sprintf("Error while fetching husbando/kitsune/neko/waifu: %v", err)
+			s.InteractionResponseEdit(i.Interaction, &discordgo.WebhookEdit{
+				Content: &errorMessage,
+			})
 		}
 	}
 }

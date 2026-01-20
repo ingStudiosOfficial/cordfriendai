@@ -17,7 +17,7 @@ import (
 	"github.com/joho/godotenv"
 )
 
-const VERSION = "1.5.3"
+const VERSION = "1.6.0"
 
 var STARTTIME time.Time
 
@@ -65,11 +65,52 @@ func main() {
 	dg.AddHandler(func(s *discordgo.Session, r *discordgo.Ready) {
 		log.Printf("Logged in as: %v#%v", s.State.User.Username, s.State.User.Discriminator)
 
+		var minCount float64 = 1.0
+
 		var commands = []*discordgo.ApplicationCommand{
 			{
 				Name:        "load-name",
 				Description: "Sets the nickname to the saved name from the Cordfriend AI dashboard.",
 				Type:        discordgo.ChatApplicationCommand,
+			},
+			{
+				Name:        "fetch-neko",
+				Description: "Fetches an image of a husbando/kitsune/neko/waifu of your choice and count.",
+				Type:        discordgo.ChatApplicationCommand,
+				Options: []*discordgo.ApplicationCommandOption{
+					{
+						Type:        discordgo.ApplicationCommandOptionString,
+						Name:        "type",
+						Description: "Can be husbando/kitsune/neko/waifu",
+						Choices: []*discordgo.ApplicationCommandOptionChoice{
+							{
+								Name:  "husbando",
+								Value: "husbando",
+							},
+							{
+								Name:  "kitsune",
+								Value: "kitsune",
+							},
+							{
+								Name:  "neko",
+								Value: "neko",
+							},
+							{
+								Name:  "waifu",
+								Value: "waifu",
+							},
+						},
+						Required: true,
+					},
+					{
+						Type:        discordgo.ApplicationCommandOptionInteger,
+						Name:        "qty",
+						Description: "Amount of images to fetch",
+						MinValue:    &minCount,
+						MaxValue:    10.0,
+						Required:    false,
+					},
+				},
 			},
 		}
 
@@ -77,6 +118,8 @@ func main() {
 
 		for i, v := range commands {
 			cmd, err := s.ApplicationCommandCreate(s.State.User.ID, "", v)
+			// for dev only
+			s.ApplicationCommandCreate(s.State.User.ID, "1164025238883946537", commands[i])
 			if err != nil {
 				log.Panicf("Cannot create '%v' command: %v", v.Name, err)
 			}
