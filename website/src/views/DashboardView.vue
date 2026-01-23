@@ -24,6 +24,8 @@
     const isEditingBot = ref(false);
     const showAccountDialog = ref(false);
     const userAccount = ref(null);
+    const loaded = ref(false);
+    const failure = ref(false);
 
     let fetchedUserAccount;
 
@@ -105,7 +107,20 @@
 
     onMounted(async () => {
         serverBots.value = await fetchAllBots(apiBaseUrl);
+        if (serverBots.value === null) {
+            loaded.value = false;
+            failure.value = true;
+        } else {
+            loaded.value = true;
+        }
+
         fetchedUserAccount = await fetchUserData(apiBaseUrl);
+        if (fetchedUserAccount === null) {
+            loaded.value = false;
+            failure.value = true;
+        } else {
+            loaded.value = true;
+        }
     });
 
     onUnmounted(() => {
@@ -150,7 +165,8 @@
         </md-fab>
     </div>
 
-    <LoaderContainer v-else class="loader-container" loader-color="var(--md-sys-color-primary)" loading-text="Hang on while we load your bots..."></LoaderContainer>
+    <LoaderContainer v-else-if="!loaded && !failure" class="loader-container" loader-color="var(--md-sys-color-primary)" loading-text="Hang on while we load your bots..."></LoaderContainer>
+    <p v-else>There was an error loading data. Please try again.</p>
 </template>
 
 <style scoped>

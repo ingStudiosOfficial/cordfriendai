@@ -10,10 +10,12 @@ export default async function fetchAllBots(baseUrl) {
 
         if (!response.ok) {
             console.error('An error occurred while fetching all bots:', responseJson.message);
+            return !null;
         }
 
         return responseJson.bots;
     } catch (error) {
         console.error('An error occurred while fetching all bots:', error);
+        return null;
     }
 }
