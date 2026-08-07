@@ -6,8 +6,8 @@ import (
 	"net/http"
 	"strings"
 
-	nb "github.com/Yakiyo/nekos_best.go"
 	"github.com/bwmarrin/discordgo"
+	nb "github.com/ingStudiosOfficial/nekos_best.go"
 )
 
 func GenerateNeko(s *discordgo.Session, i *discordgo.InteractionCreate) error {
@@ -69,7 +69,6 @@ func GenerateNeko(s *discordgo.Session, i *discordgo.InteractionCreate) error {
 		imageUrls = append(imageUrls, url.Url)
 	}
 
-	files := make([]*discordgo.File, 0, len(imageUrls))
 	embeds := make([]*discordgo.MessageEmbed, 0, len(imageUrls))
 
 	for idx, url := range imageUrls {
@@ -79,13 +78,6 @@ func GenerateNeko(s *discordgo.Session, i *discordgo.InteractionCreate) error {
 		}
 		defer resp.Body.Close()
 
-		fileName := fmt.Sprintf("embed_%v.png", idx)
-
-		files = append(files, &discordgo.File{
-			Name:   fileName,
-			Reader: resp.Body,
-		})
-
 		embedMessage := fmt.Sprintf("Fetched from [nekos.best](https://nekos.best). View the original image [here](%v). Artist: [%v](%v)", res[idx].Source_url, res[idx].Artist_name, res[idx].Artist_href)
 
 		embeds = append(embeds, &discordgo.MessageEmbed{
@@ -93,7 +85,7 @@ func GenerateNeko(s *discordgo.Session, i *discordgo.InteractionCreate) error {
 			Description: embedMessage,
 			Type:        discordgo.EmbedTypeImage,
 			Image: &discordgo.MessageEmbedImage{
-				URL: "attachment://" + fileName,
+				URL: url,
 			},
 		})
 	}
@@ -101,7 +93,6 @@ func GenerateNeko(s *discordgo.Session, i *discordgo.InteractionCreate) error {
 	responseMessage := fmt.Sprintf("[%v](https://nekos.best) fetched successfully", imageType)
 
 	_, err = s.InteractionResponseEdit(i.Interaction, &discordgo.WebhookEdit{
-		Files:   files,
 		Embeds:  &embeds,
 		Content: &responseMessage,
 	})

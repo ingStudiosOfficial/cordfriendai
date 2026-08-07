@@ -3,8 +3,8 @@ module bot
 go 1.25.3
 
 require (
-	github.com/Yakiyo/nekos_best.go v1.0.2
 	github.com/bwmarrin/discordgo v0.29.0
+	github.com/ingStudiosOfficial/nekos_best.go v0.0.0-20260807130916-eb6703a56564
 	github.com/joho/godotenv v1.5.1
 	go.mongodb.org/mongo-driver/v2 v2.4.0
 	google.golang.org/genai v1.33.0
