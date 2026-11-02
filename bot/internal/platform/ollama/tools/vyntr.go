@@ -6,19 +6,35 @@ import (
 	"net/http"
 	"net/url"
 
-	"google.golang.org/genai"
+	"github.com/ollama/ollama/api"
 )
 
-var SearchTool = &genai.FunctionDeclaration{
-	Name:        "vyntrSearch",
-	Description: "Uses Vyntr to search the web with up to date information",
-	Parameters: &genai.Schema{
-		Type: genai.TypeObject,
-		Properties: map[string]*genai.Schema{
-			"query": {Type: genai.TypeString},
+type VyntrSearchArgs struct {
+	SearchQuery string `json:"search_query"`
+}
+
+func GetVyntrSearchTool() api.Tool {
+	properties := api.NewToolPropertiesMap()
+
+	properties.Set("search_query", api.ToolProperty{
+		Type:        api.PropertyType{"string"},
+		Description: "The query you want to search for",
+	})
+
+	var VyntrSearchTool = api.Tool {
+		Type: "function",
+		Function: api.ToolFunction{
+			Name: "search_web",
+			Description: "Searches the web for up-to-date information",
+			Parameters: api.ToolFunctionParameters{
+				Type: "object",
+				Properties: properties,
+				Required: []string{"search_query"},
+			},
 		},
-		Required: []string{"query"},
-	},
+	}
+
+	return VyntrSearchTool
 }
 
 func VyntrSearch(apiKey string, query string) (string, error) {

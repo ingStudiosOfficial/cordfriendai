@@ -2,8 +2,9 @@ package discord
 
 import (
 	"fmt"
+	"log"
 
-	"bot/internal/platform/gemini"
+	"bot/internal/platform/ollama"
 	"bot/internal/storage/mongodb"
 	"bot/internal/strings"
 
@@ -13,19 +14,20 @@ import (
 
 type MessageParams struct {
 	Db *mongo.Database
+	Client *ollama.OllamaRequest
 }
 
-func MessageHandler(db *mongo.Database) *MessageParams {
+func MessageHandler(db *mongo.Database) (*MessageParams, error) {
+	ollamaApiClient := ollama.InitializeOllama()
+
 	return &MessageParams{
 		Db: db,
-	}
+		Client: ollamaApiClient,
+	}, nil
 }
 
 func (r *MessageParams) HandleMessageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 	fmt.Println("Message created, running checks.")
-
-	botRepository := mongodb.NewBotRepository(r.Db)
-	geminiAPIClient := gemini.NewAPIRequest(botRepository, m)
 
 	// Ignore messages created by the bot
 	if m.Author.ID == s.State.User.ID {
@@ -43,6 +45,8 @@ func (r *MessageParams) HandleMessageCreate(s *discordgo.Session, m *discordgo.M
 	}
 
 	if mentioned {
+		botRepository := mongodb.NewBotRepository(r.Db)
+
 		err := s.ChannelTyping(m.ChannelID)
 		if err != nil {
 			fmt.Println("Failed to add typing indicator:", err)
@@ -52,9 +56,10 @@ func (r *MessageParams) HandleMessageCreate(s *discordgo.Session, m *discordgo.M
 
 		fmt.Println("Bot mentioned, responding.")
 
-		response := geminiAPIClient.RequestGenAi()
-		fmt.Println("Returning response:", response)
-
-		s.ChannelMessageSend(m.ChannelID, strings.TruncateString(response, 2000))
+		genErr := r.Client.GenerateFromText(s, m, *botRepository)
+		if genErr != nil {
+			log.Printf("Error while generating: %v", err)
+			s.ChannelMessageSend(m.ChannelID, genErr.Error())
+		}
 	}
 }

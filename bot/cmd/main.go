@@ -125,7 +125,11 @@ func main() {
 		}
 	})
 
-	messageHandler := discord.MessageHandler(mongoClient.Database(databaseName))
+	messageHandler, err := discord.MessageHandler(mongoClient.Database(databaseName))
+	if err != nil {
+		log.Fatalf("Error while initializing message handler: %v", err)
+	}
+
 	commandHandler := discord.CommandHandler(mongoClient.Database(databaseName))
 
 	dg.AddHandler(commandHandler.HandleCommand)

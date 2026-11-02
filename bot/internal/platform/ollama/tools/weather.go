@@ -5,19 +5,35 @@ import (
 	"io"
 	"net/http"
 
-	"google.golang.org/genai"
+	"github.com/ollama/ollama/api"
 )
 
-var WeatherTool = &genai.FunctionDeclaration{
-	Name:        "getWeather",
-	Description: "Gets the current weather in a town, city, state, prefecture, province, or country",
-	Parameters: &genai.Schema{
-		Type: genai.TypeObject,
-		Properties: map[string]*genai.Schema{
-			"location": {Type: genai.TypeString},
+type GetWeatherArgs struct {
+	Locations string `json:"location"`
+}
+
+func GetWeatherTool() api.Tool {
+	properties := api.NewToolPropertiesMap()
+
+	properties.Set("location", api.ToolProperty{
+		Type:        api.PropertyType{"string"},
+		Description: "The name of the location you want to fetch the weather for",
+	})
+
+	var WeatherTool = api.Tool {
+		Type: "function",
+		Function: api.ToolFunction{
+			Name: "fetch_weather",
+			Description: "Fetches the weather given a location",
+			Parameters: api.ToolFunctionParameters{
+				Type: "object",
+				Properties: properties,
+				Required: []string{"location"},
+			},
 		},
-		Required: []string{"location"},
-	},
+	}
+
+	return WeatherTool
 }
 
 func GetWeather(apiKey string, location string) (string, error) {
