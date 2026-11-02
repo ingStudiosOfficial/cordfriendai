@@ -17,9 +17,7 @@ type MessageParams struct {
 	Client *ollama.OllamaRequest
 }
 
-func MessageHandler(db *mongo.Database) (*MessageParams, error) {
-	ollamaApiClient := ollama.InitializeOllama()
-
+func MessageHandler(db *mongo.Database, ollamaApiClient *ollama.OllamaRequest) (*MessageParams, error) {
 	return &MessageParams{
 		Db: db,
 		Client: ollamaApiClient,

@@ -5,35 +5,31 @@ import (
 	"io"
 	"net/http"
 
-	"github.com/ollama/ollama/api"
+	"github.com/openai/openai-go"
+	"github.com/openai/openai-go/shared"
 )
 
 type GetWeatherArgs struct {
 	Locations string `json:"location"`
 }
 
-func GetWeatherTool() api.Tool {
-	properties := api.NewToolPropertiesMap()
-
-	properties.Set("location", api.ToolProperty{
-		Type:        api.PropertyType{"string"},
-		Description: "The name of the location you want to fetch the weather for",
-	})
-
-	var WeatherTool = api.Tool {
-		Type: "function",
-		Function: api.ToolFunction{
-			Name: "fetch_weather",
-			Description: "Fetches the weather given a location",
-			Parameters: api.ToolFunctionParameters{
-				Type: "object",
-				Properties: properties,
-				Required: []string{"location"},
+func GetWeatherTool() openai.ChatCompletionToolParam {
+	return openai.ChatCompletionToolParam{
+		Function: shared.FunctionDefinitionParam{
+			Name:        "fetch_weather",
+			Description: openai.String("Fetches the weather given a location"),
+			Parameters: shared.FunctionParameters{
+				"type": "object",
+				"properties": map[string]any{
+					"location": map[string]any{
+						"type":        "string",
+						"description": "The name of the location you want to fetch the weather for",
+					},
+				},
+				"required": []string{"location"},
 			},
 		},
 	}
-
-	return WeatherTool
 }
 
 func GetWeather(apiKey string, location string) (string, error) {

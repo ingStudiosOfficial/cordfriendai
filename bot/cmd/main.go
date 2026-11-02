@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"bot/internal/discord"
+	"bot/internal/platform/ollama"
 	"bot/internal/scheduler"
 	"bot/internal/storage/mongodb"
 
@@ -112,6 +113,19 @@ func main() {
 					},
 				},
 			},
+			{
+				Name:        "talk",
+				Description: "Talk to Cordfriend AI in a Discord embed.",
+				Type:        discordgo.ChatApplicationCommand,
+				Options: []*discordgo.ApplicationCommandOption{
+					{
+						Type: discordgo.ApplicationCommandOptionString,
+						Name: "message",
+						Description: "The message to send.",
+						Required: true,
+					},
+				},
+			},
 		}
 
 		registeredCommands := make([]*discordgo.ApplicationCommand, len(commands))
@@ -125,12 +139,14 @@ func main() {
 		}
 	})
 
-	messageHandler, err := discord.MessageHandler(mongoClient.Database(databaseName))
+	ollamaApiClient := ollama.InitializeOllama()
+
+	messageHandler, err := discord.MessageHandler(mongoClient.Database(databaseName), ollamaApiClient)
 	if err != nil {
 		log.Fatalf("Error while initializing message handler: %v", err)
 	}
 
-	commandHandler := discord.CommandHandler(mongoClient.Database(databaseName))
+	commandHandler := discord.CommandHandler(mongoClient.Database(databaseName), ollamaApiClient)
 
 	dg.AddHandler(commandHandler.HandleCommand)
 	dg.AddHandler(messageHandler.HandleMessageCreate)

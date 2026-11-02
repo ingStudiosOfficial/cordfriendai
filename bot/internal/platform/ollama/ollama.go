@@ -2,246 +2,371 @@ package ollama
 
 import (
 	"bot/internal/platform/ollama/tools"
+	"bot/internal/response"
 	"bot/internal/storage/mongodb"
 	"bot/internal/structs"
 	"context"
 	"encoding/json"
 	"fmt"
 	"log"
+	"os"
 	"strconv"
 	"strings"
 
 	"github.com/bwmarrin/discordgo"
-	"github.com/ollama/ollama/api"
+	"github.com/openai/openai-go"
+	"github.com/openai/openai-go/option"
 )
 
 type OllamaRequest struct {
-	Ctx     context.Context
-	Client  *api.Client
-	Model   string
+	Ctx    context.Context
+	Client openai.Client
+	Model  string
 }
 
 func InitializeOllama() *OllamaRequest {
-	client, err := api.ClientFromEnvironment()
-	if err != nil {
-		log.Fatalf("Failed to create client from environment: %v\n", err)
-	}
+	if (os.Getenv("USE_CLOUD") == "true") {
+		client := openai.NewClient(
+			option.WithBaseURL("https://api.groq.com/openai/v1"),
+			option.WithAPIKey(os.Getenv("GROQ_API_KEY")),
+		)
+		ctx := context.Background()
 
-	ctx := context.Background()
+		model := "openai/gpt-oss-20b"
 
-	model := "qwen3.5:4b"
+		return &OllamaRequest{
+			Ctx:    ctx,
+			Client: client,
+			Model:  model,
+		}
+	} else {
+		client := openai.NewClient(
+			option.WithBaseURL("http://localhost:11434/v1/"),
+			option.WithAPIKey("ollama"),
+		)
 
-	return &OllamaRequest{
-		Ctx:     ctx,
-		Client:  client,
-		Model:   model,
+		ctx := context.Background()
+
+		model := "qwen3.5:4b"
+
+		return &OllamaRequest{
+			Ctx:    ctx,
+			Client: client,
+			Model:  model,
+		}
 	}
 }
 
 func (r *OllamaRequest) GenerateFromText(s *discordgo.Session, m *discordgo.MessageCreate, repository mongodb.BotRepository) error {
 	message := m.Content
 
-	history := []api.Message{}
+	history := []openai.ChatCompletionMessageParamUnion{}
 
 	conv, fcerr := repository.FetchConversations(m.GuildID)
 	if fcerr != nil {
 		return fcerr
 	}
 
-	for _, val := range conv {
-		history = append(history, api.Message{
-			Role: "user",
-			Content: val.User.Name + val.User.Message,
-		})
-
-		history = append(history, api.Message{
-			Role: "assistant",
-			Content: val.Bot,
-		})
-	}
-
-	history = append(history, api.Message{
-		Role:    "user",
-		Content: message,
-	})
-
-	var initialMessage, err = s.ChannelMessageSendReply(m.ChannelID, "Pondering...", m.Reference())
+	persona, err := repository.FetchBotPersona(m.GuildID)
 	if err != nil {
-		return err
+		log.Printf("Error: %v", err)
+	} else {
+		history = append(history, openai.SystemMessage(persona))
 	}
+
+	for _, val := range conv {
+		history = append(history, openai.UserMessage(val.User.Name+val.User.Message))
+		history = append(history, openai.AssistantMessage(val.Bot))
+	}
+
+	history = append(history, openai.UserMessage(message))
 
 	toolsCalled := []string{}
 
 	for {
-		req := &api.ChatRequest{
+		params := openai.ChatCompletionNewParams{
 			Model:    r.Model,
 			Messages: history,
-			// Tools: []api.Tool{
-			// 	tools.GetTimeTool(),
-			// 	tools.GetVyntrSearchTool(),
-			// 	tools.GetWeatherTool(),
-			// },
-			Think: &api.ThinkValue{
-				Value: false,
+			Tools: []openai.ChatCompletionToolParam{
+				tools.GetTimeTool(),
+				tools.GetVyntrSearchTool(),
+				tools.GetWeatherTool(),
 			},
+			ReasoningEffort: "low",
 		}
 
-		var toolCalls []api.ToolCall
+		stream := r.Client.Chat.Completions.NewStreaming(r.Ctx, params)
+		acc := openai.ChatCompletionAccumulator{}
 
 		finalResp := ""
 
-		respFunc := func(resp api.ChatResponse) error {
-			if resp.Message.Content != "" {
-				fmt.Print(resp.Message.Content)
-				finalResp += resp.Message.Content
-				initialMessage, err = s.ChannelMessageEdit(m.ChannelID, initialMessage.ID, finalResp)
-				if err != nil {
-					log.Printf("Error: %v", err)
-				}
-			}
+		for stream.Next() {
+			chunk := stream.Current()
+			acc.AddChunk(chunk)
 
-			if len(resp.Message.ToolCalls) > 0 {
-				toolCalls = append(toolCalls, resp.Message.ToolCalls...)
+			if len(chunk.Choices) > 0 && chunk.Choices[0].Delta.Content != "" {
+				content := chunk.Choices[0].Delta.Content
+				fmt.Print(content)
+				finalResp += content
 			}
-
-			return nil
 		}
 
-		err := r.Client.Chat(r.Ctx, req, respFunc)
-		if err != nil {
+		if err := stream.Err(); err != nil {
 			return fmt.Errorf("error during generation: %v\n", err)
 		}
 
+		if len(acc.Choices) == 0 {
+			return fmt.Errorf("error during generation: no choices returned\n")
+		}
+
+		toolCalls := acc.Choices[0].Message.ToolCalls
+
 		if len(toolCalls) == 0 {
-			history = append(history, api.Message{
-				Role:    "assistant",
-				Content: finalResp,
-			})
+			s.ChannelMessageSendReply(m.ChannelID, finalResp, m.Reference())
+			history = append(history, openai.AssistantMessage(finalResp))
 			repository.AddConversations(m.GuildID, structs.User{
-				Name: m.Author.DisplayName(),
+				Name:    m.Author.DisplayName(),
 				Message: message,
 			}, finalResp)
 			return nil
 		}
 
-		history = append(history, api.Message{
-			Role:      "assistant",
-			Content:   finalResp,
-			ToolCalls: toolCalls,
-		})
+		history = append(history, acc.Choices[0].Message.ToParam())
 
 		for _, toolCall := range toolCalls {
+			result := ""
+
 			switch toolCall.Function.Name {
 			case "get_time":
-				jsonBytes, err := json.Marshal(toolCall.Function.Arguments)
-				if err != nil {
-					history = append(history, api.Message{
-						Role:    "tool",
-						Content: "An error occurred while getting the current time.",
-					})
-					break
-				}
-
 				var timeArgs tools.GetTimeArgs
-				if err := json.Unmarshal(jsonBytes, &timeArgs); err != nil {
-					history = append(history, api.Message{
-						Role:    "tool",
-						Content: "An error occurred while getting the current time.",
-					})
+				if err := json.Unmarshal([]byte(toolCall.Function.Arguments), &timeArgs); err != nil {
+					result = "An error occurred while getting the current time."
 					break
 				}
 
-				time := tools.GetTime(timeArgs.LocationIana).String()
-
-				history = append(history, api.Message{
-					Role:    "tool",
-					Content: time,
-				})
+				result = tools.GetTime(timeArgs.LocationIana).String()
 
 			case "fetch_weather":
-				jsonBytes, err := json.Marshal(toolCall.Function.Arguments)
-				if err != nil {
-					history = append(history, api.Message{
-						Role:    "tool",
-						Content: "An error occurred while getting the weather.",
-					})
-					break
-				}
-
 				var weatherArgs tools.GetWeatherArgs
-				if err := json.Unmarshal(jsonBytes, &weatherArgs); err != nil {
-					history = append(history, api.Message{
-						Role:    "tool",
-						Content: "An error occurred while getting the weather.",
-					})
+				if err := json.Unmarshal([]byte(toolCall.Function.Arguments), &weatherArgs); err != nil {
+					result = "An error occurred while getting the weather."
 					break
 				}
 
 				apiKey, err := repository.FetchWeatherApiKey(m.GuildID)
 				if err != nil {
 					fmt.Println("Error while fetching weather API key:", err)
-					history = append(history, api.Message{
-						Role: "tool",
-						Content: "There was an error while fetching the weather. Please check whether your API key is valid and your rate limits.",
-					})
+					result = "There was an error while fetching the weather. Please check whether your API key is valid and your rate limits."
+					break
 				}
 
 				weather, err := tools.GetWeather(apiKey, weatherArgs.Locations)
 				if err != nil {
 					fmt.Println("Error while fetching weather:", err)
-					history = append(history, api.Message{
-						Role: "tool",
-						Content: "There was an error while fetching the weather. Please check whether your API key is valid and your rate limits.",
-					})
-				}
-
-				history = append(history, api.Message{
-					Role:    "tool",
-					Content: weather,
-				})
-
-			case "search_web":
-				jsonBytes, err := json.Marshal(toolCall.Function.Arguments)
-				if err != nil {
-					history = append(history, api.Message{
-						Role:    "tool",
-						Content: "An error occurred while searching the web.",
-					})
+					result = "There was an error while fetching the weather. Please check whether your API key is valid and your rate limits."
 					break
 				}
 
+				result = weather
+
+			case "search_web":
 				var vyntrSearchArgs tools.VyntrSearchArgs
-				if err := json.Unmarshal(jsonBytes, &vyntrSearchArgs); err != nil {
-					history = append(history, api.Message{
-						Role:    "tool",
-						Content: "An error occurred while searching the web.",
-					})
+				if err := json.Unmarshal([]byte(toolCall.Function.Arguments), &vyntrSearchArgs); err != nil {
+					result = "An error occurred while searching the web."
 					break
 				}
 
 				apiKey, err := repository.FetchVyntrApiKey(m.GuildID)
 				if err != nil {
-					fmt.Println("Error while fetching weather API key:", err)
-					history = append(history, api.Message{
-						Role: "tool",
-						Content: "An error occurred while searching the web.",
-					})
+					fmt.Println("Error while fetching Vyntr API key:", err)
+					result = "An error occurred while searching the web."
+					break
 				}
 
-				result, err := tools.VyntrSearch(apiKey, vyntrSearchArgs.SearchQuery)
+				searchResult, err := tools.VyntrSearch(apiKey, vyntrSearchArgs.SearchQuery)
 				if err != nil {
 					fmt.Println("Error while searching the web:", err)
-					history = append(history, api.Message{
-						Role: "tool",
-						Content: "An error occurred while searching the web.",
-					})
+					result = "An error occurred while searching the web."
+					break
 				}
 
-				history = append(history, api.Message{
-					Role:    "tool",
-					Content: result,
-				})
+				result = searchResult
+
+			default:
+				result = "Unknown tool: " + toolCall.Function.Name
 			}
+
+			history = append(history, openai.ToolMessage(result, toolCall.ID))
+
+			toolsCalled = append(toolsCalled, toolCall.Function.Name)
+
+			var builder strings.Builder
+
+			for i, tool := range toolsCalled {
+				fmt.Fprintf(&builder, "%s. %s", strconv.Itoa(i+1), tool)
+			}
+
+			fmt.Println(history)
+		}
+	}
+}
+
+func (r *OllamaRequest) GenerateFromCommand(s *discordgo.Session, i *discordgo.InteractionCreate, repository mongodb.BotRepository) error {
+	err := response.DeferResponse(s, i, "Pondering...")
+	if err != nil {
+		return err
+	}
+	
+	interactionData := i.ApplicationCommandData()
+
+	options := interactionData.Options
+	optionMap := make(map[string]*discordgo.ApplicationCommandInteractionDataOption, len(options))
+
+	for _, opt := range options {
+		optionMap[opt.Name] = opt
+	}
+
+	message := optionMap["message"].StringValue()
+
+	history := []openai.ChatCompletionMessageParamUnion{}
+
+	conv, fcerr := repository.FetchConversations(i.GuildID)
+	if fcerr != nil {
+		return fcerr
+	}
+
+	persona, err := repository.FetchBotPersona(i.GuildID)
+	if err != nil {
+		log.Printf("Error: %v", err)
+	} else {
+		history = append(history, openai.SystemMessage(persona))
+	}
+
+	for _, val := range conv {
+		history = append(history, openai.UserMessage(val.User.Name+val.User.Message))
+		history = append(history, openai.AssistantMessage(val.Bot))
+	}
+
+	history = append(history, openai.UserMessage(message))
+
+	toolsCalled := []string{}
+
+	for {
+		params := openai.ChatCompletionNewParams{
+			Model:    r.Model,
+			Messages: history,
+			Tools: []openai.ChatCompletionToolParam{
+				tools.GetTimeTool(),
+				tools.GetVyntrSearchTool(),
+				tools.GetWeatherTool(),
+			},
+			ReasoningEffort: "low",
+		}
+
+		stream := r.Client.Chat.Completions.NewStreaming(r.Ctx, params)
+		acc := openai.ChatCompletionAccumulator{}
+
+		finalResp := ""
+
+		for stream.Next() {
+			chunk := stream.Current()
+			acc.AddChunk(chunk)
+
+			if len(chunk.Choices) > 0 && chunk.Choices[0].Delta.Content != "" {
+				content := chunk.Choices[0].Delta.Content
+				fmt.Print(content)
+				finalResp += content
+			}
+		}
+
+		if err := stream.Err(); err != nil {
+			return fmt.Errorf("error during generation: %v\n", err)
+		}
+
+		if len(acc.Choices) == 0 {
+			return fmt.Errorf("error during generation: no choices returned\n")
+		}
+
+		toolCalls := acc.Choices[0].Message.ToolCalls
+
+		if len(toolCalls) == 0 {
+			s.InteractionResponseEdit(i.Interaction, &discordgo.WebhookEdit{
+				Content: &finalResp,
+			})
+			history = append(history, openai.AssistantMessage(finalResp))
+			repository.AddConversations(i.GuildID, structs.User{
+				Name:    i.Member.DisplayName(),
+				Message: message,
+			}, finalResp)
+			return nil
+		}
+
+		history = append(history, acc.Choices[0].Message.ToParam())
+
+		for _, toolCall := range toolCalls {
+			result := ""
+
+			switch toolCall.Function.Name {
+			case "get_time":
+				var timeArgs tools.GetTimeArgs
+				if err := json.Unmarshal([]byte(toolCall.Function.Arguments), &timeArgs); err != nil {
+					result = "An error occurred while getting the current time."
+					break
+				}
+
+				result = tools.GetTime(timeArgs.LocationIana).String()
+
+			case "fetch_weather":
+				var weatherArgs tools.GetWeatherArgs
+				if err := json.Unmarshal([]byte(toolCall.Function.Arguments), &weatherArgs); err != nil {
+					result = "An error occurred while getting the weather."
+					break
+				}
+
+				apiKey, err := repository.FetchWeatherApiKey(i.GuildID)
+				if err != nil {
+					fmt.Println("Error while fetching weather API key:", err)
+					result = "There was an error while fetching the weather. Please check whether your API key is valid and your rate limits."
+					break
+				}
+
+				weather, err := tools.GetWeather(apiKey, weatherArgs.Locations)
+				if err != nil {
+					fmt.Println("Error while fetching weather:", err)
+					result = "There was an error while fetching the weather. Please check whether your API key is valid and your rate limits."
+					break
+				}
+
+				result = weather
+
+			case "search_web":
+				var vyntrSearchArgs tools.VyntrSearchArgs
+				if err := json.Unmarshal([]byte(toolCall.Function.Arguments), &vyntrSearchArgs); err != nil {
+					result = "An error occurred while searching the web."
+					break
+				}
+
+				apiKey, err := repository.FetchVyntrApiKey(i.GuildID)
+				if err != nil {
+					fmt.Println("Error while fetching Vyntr API key:", err)
+					result = "An error occurred while searching the web."
+					break
+				}
+
+				searchResult, err := tools.VyntrSearch(apiKey, vyntrSearchArgs.SearchQuery)
+				if err != nil {
+					fmt.Println("Error while searching the web:", err)
+					result = "An error occurred while searching the web."
+					break
+				}
+
+				result = searchResult
+
+			default:
+				result = "Unknown tool: " + toolCall.Function.Name
+			}
+
+			history = append(history, openai.ToolMessage(result, toolCall.ID))
 
 			toolsCalled = append(toolsCalled, toolCall.Function.Name)
 

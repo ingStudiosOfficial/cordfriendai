@@ -6,35 +6,31 @@ import (
 	"net/http"
 	"net/url"
 
-	"github.com/ollama/ollama/api"
+	"github.com/openai/openai-go"
+	"github.com/openai/openai-go/shared"
 )
 
 type VyntrSearchArgs struct {
 	SearchQuery string `json:"search_query"`
 }
 
-func GetVyntrSearchTool() api.Tool {
-	properties := api.NewToolPropertiesMap()
-
-	properties.Set("search_query", api.ToolProperty{
-		Type:        api.PropertyType{"string"},
-		Description: "The query you want to search for",
-	})
-
-	var VyntrSearchTool = api.Tool {
-		Type: "function",
-		Function: api.ToolFunction{
-			Name: "search_web",
-			Description: "Searches the web for up-to-date information",
-			Parameters: api.ToolFunctionParameters{
-				Type: "object",
-				Properties: properties,
-				Required: []string{"search_query"},
+func GetVyntrSearchTool() openai.ChatCompletionToolParam {
+	return openai.ChatCompletionToolParam{
+		Function: shared.FunctionDefinitionParam{
+			Name:        "search_web",
+			Description: openai.String("Searches the web for up-to-date information"),
+			Parameters: shared.FunctionParameters{
+				"type": "object",
+				"properties": map[string]any{
+					"search_query": map[string]any{
+						"type":        "string",
+						"description": "The query you want to search for",
+					},
+				},
+				"required": []string{"search_query"},
 			},
 		},
 	}
-
-	return VyntrSearchTool
 }
 
 func VyntrSearch(apiKey string, query string) (string, error) {
